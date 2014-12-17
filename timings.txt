@@ -31,16 +31,28 @@ MemTotal:        3793864 kB
 Number of repeated spectra. -N 1
 List of sampling fractions in percent: -sf 50
 
-Timing: 76.0 s
+Timing: 213.9 s
 
 ###########
 Number of repeated spectra. -N 10
 List of sampling fractions in percent: -sf 50
 
-Timing: 275.9 s
+Timing: 409.1 s
 
 ###########
 Number of repeated spectra. -N 1
 List of sampling fractions in percent: -sf 50 40 30 20 15 10 5
 
-Timing:
+Timing: 705.2 s
+
+###########
+Number of repeated spectra. -N 1
+List of sampling fractions in percent: -sf 20 15 10 6
+
+Timing: 549.8 s
+
+###########
+Number of repeated spectra. -N 20
+List of sampling fractions in percent: -sf 20 15 10 6
+
+Timing: 2294.2 s
