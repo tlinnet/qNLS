@@ -1,0 +1,46 @@
+Notes for timing on computer.
+
+Hardware:
+> lscpu
+Architecture:          x86_64
+CPU op-mode(s):        32-bit, 64-bit
+Byte Order:            Little Endian
+CPU(s):                4
+On-line CPU(s) list:   0-3
+Thread(s) per core:    1
+Core(s) per socket:    4
+Socket(s):             1
+NUMA node(s):          1
+Vendor ID:             GenuineIntel
+CPU family:            6
+Model:                 58
+Stepping:              9
+CPU MHz:               1600.000
+BogoMIPS:              6385.60
+Virtualization:        VT-x
+L1d cache:             32K
+L1i cache:             32K
+L2 cache:              256K
+L3 cache:              6144K
+NUMA node0 CPU(s):     0-3
+
+cat /proc/meminfo
+MemTotal:        3793864 kB
+
+###########
+Number of repeated spectra. -N 1
+List of sampling fractions in percent: -sf 50
+
+Timing: 76.0 s
+
+###########
+Number of repeated spectra. -N 10
+List of sampling fractions in percent: -sf 50
+
+Timing: 275.9 s
+
+###########
+Number of repeated spectra. -N 1
+List of sampling fractions in percent: -sf 50 40 30 20 15 10 5
+
+Timing:
