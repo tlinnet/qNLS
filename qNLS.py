@@ -45,7 +45,7 @@ start_time = time.time()
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-N', nargs='?', type=int, metavar='N', dest='N', default=1, help='Number of repeated spectra. -N 1')
-parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[20], help='list of sampling fractions in percent: -sf 50 30 10')
+parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[20, 15, 10, 5], help='list of sampling fractions in percent: -sf 15 10 5')
 parser.add_argument('-T2', nargs='?', type=float, metavar='T2', dest='T2', default=0.1, help='T2: spin-spin relaxation time, the expected time constant characterizing the signal decay in in-direct dimension (s): -T2 0.1.')
 parser.add_argument('-FST_PNT_PPM', nargs='?', type=float, metavar='FST_PNT_PPM', dest='FST_PNT_PPM', default=11, help='MDD param: Define from where the region of interest starts in the direct dimension [ppm]: -FST_PNT_PPM 11')
 parser.add_argument('-ROISW', nargs='?', type=float, metavar='ROISW', dest='ROISW', default=5, help='MDD param: Define sweep-width in ppm, to subtract from FST_PNT_PPM: -ROISW 5')
