@@ -1064,6 +1064,8 @@ if __name__ == "__main__":
         res_dic[sf_dir]['ref']['hist'] = [amp, mu, sigma]
         png_path = startdir + os.sep + "hist_%s_ref.png"%(sf_dir)
         plt.savefig(png_path, format='png', dpi=600)
+        # Close figure.
+        plt.close("all")
             
         # Then create ni dirs.
         for j, ni_dir in enumerate(ni_dirs):
@@ -1224,6 +1226,8 @@ if __name__ == "__main__":
 
             png_path = startdir + os.sep + "hist_%s_%s.png"%(sf_dir, proc_dir)
             plt.savefig(png_path, format='png', dpi=600)
+            # Close figure.
+            plt.close("all")
 
             # Make a correlation plot
             fig = plt.figure()
@@ -1252,6 +1256,8 @@ if __name__ == "__main__":
 
             png_path = startdir + os.sep + "corr_%s_%s.png"%(sf_dir, proc_dir)
             plt.savefig(png_path, format='png', dpi=600)
+            # Close figure.
+            plt.close("all")
 
         # Now make report for Hist
         hist_results_name = startdir + os.sep + "hist_%s_results.txt"%(sf_dir)
