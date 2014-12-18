@@ -77,7 +77,7 @@ Try write in your terminal "which mddnmr4pipeN.sh", to see if they are available
 | **mddnmr4pipeN.sh**  
 | **setHD**  
 | **queMM.sh**  
-
+|  
 | NMRPipe programs  
 | **showApod**  
 
