@@ -39,10 +39,34 @@ Where sf is the sampling fractions in percent.
 
 The script then proceeds as follows:
 
-* Loop over the sampling fraction level
+* Loop over the sampling fraction level: 
+** Produce nls.in
+*** Numper of points in direct and in-direct dimensions, and sweep-width (Hz) are read from test.fid with nmrglue.
+*** In 00_ref.fid, write nls.in at 100 sf level
+*** In 01.fid, write nls.in according to the sampling fraction level
+** Produce nusschedules with 'nussampler' from MddNMR within each *.fid folder
+** Binary read the orginal fid file, and write out a truncated fid file in each *.fid folder according to the nusschedule.
+*** The individual fid file only contains the in-direct FIDs determined and ordered from the nusscedule.
+*** The 00_ref.fid then contains the full fid, but where the in-direct FIDs have been shuffled according to the full nusscedule.
+** Then write proc.sh, which is command file with environment settings to MddNMR. These settings can be modified by parsing input commands to qNLS.py
+** Then write fidSP.com and recFT.com. These are spectrum processing parameters, and these are read from the initial files of fid.com, and nmrproc.com.
+** Then produce files for coMDD processing.
+** Then coMDD process.
+** Then analyse and produce figures.
 
+==================
+Software depencies
+==================
 
+python module depencies for the script
+--------------------------------------
+| **nmrglue**, to read spectrum as numpy array  
+| **matplotlib.pyplot**, to produce figures  
+| **scipy.optimize**, to fit histogram  
+| **numpy, for data arrays  
 
+MddNMR
+------
 
 
 ======================
@@ -74,4 +98,17 @@ nmrglue
 | Link to discussion: https://groups.google.com/forum/#!forum/nmrglue-discuss  
 | The code is develop at Github: https://github.com/jjhelmus/nmrglue/  
 | Documentation: http://nmrglue.readthedocs.org/en/latest/index.html  
+
+
+================
+Trouble shooting
+================
+
+coMDD in MddNMR needs some standard packages to be present on system.
+
+| On redhat 6, these are the packages to install.   
+| > yum compat-libf2c-34  
+| > yum install glibc.i686  
+
+
 
