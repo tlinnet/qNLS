@@ -51,15 +51,24 @@ Citations for software
 
 MddNMR
 -------
-| Orekhov, V.Y. and V.A. Jaravine, Analysis of non-?uniformly sampled spectra with Multi-?Dimensional Decomposition. Prog. Nucl. Magn. Reson. Spectrosc., 2011, in press, doi:10.1016/j.pnmrs.2011.02.002  
-| Kazimierczuk, K. and V.Y. Orekhov, Accelerated NMR Spectroscopy by Using Compressed Sensing. Angew. Chem.-Int. Edit., 2011, 123, 5670-3  
+| Orekhov, V.Y. and V.A. Jaravine  
+| Analysis of non-uniformly sampled spectra with Multi-?Dimensional Decomposition.  
+| Prog. Nucl. Magn. Reson. Spectrosc., 2011
+| doi:10.1016/j.pnmrs.2011.02.002 
+
+| Kazimierczuk, K. and V.Y. Orekhov
+| Accelerated NMR Spectroscopy by Using Compressed Sensing.  
+| Angew. Chem.-Int. Edit., 2011, 123, 5670-3  
 
 | Download & Manual: http://pc8.nmr.gu.se/~mdd/Downloads/  
 | Link to discussion: https://groups.google.com/forum/#!forum/mddnmr  
 
 nmrglue
 -------
-J.J. Helmus, C.P. Jaroniec, Nmrglue: An open source Python package for the analysis of multidimensional NMR data, J. Biomol. NMR 2013, 55, 355-367, http://dx.doi.org/10.1007/s10858-013-9718-x.
+| J.J. Helmus, C.P. Jaroniec  
+| Nmrglue: An open source Python package for the analysis of multidimensional NMR data | 
+| J. Biomol. NMR 2013, 55, 355-367
+| http://dx.doi.org/10.1007/s10858-013-9718-x
 
 | Homepage: http://www.nmrglue.com/  
 | Link to discussion: https://groups.google.com/forum/#!forum/nmrglue-discuss  
