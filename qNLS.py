@@ -27,6 +27,7 @@ import glob
 import nmrglue
 import matplotlib.pyplot as plt
 import numpy
+from numpy.ma import masked_where
 import os
 import os.path
 import random
@@ -340,6 +341,13 @@ def hist_plot(ndarray=None, hist_kwargs=None, show=False):
     # Calculate and plot the gauss values.
     gauss = func_gauss(params=param_vector, x=bincenters)
     ax.plot(bincenters, gauss, 'r-', label='gauss')
+
+    # Calculate spread for sigma +/- 3. 99.7 % 
+    sigma3_p = mu+3*sigma
+    sigma3_m = mu-3*sigma
+
+    ax.annotate("Sigma 3 plus", xy=(sigma3_p, 0.0), xycoords='data', xytext=(sigma3_p, 0.1*amp), textcoords='data', size=8, horizontalalignment="center", arrowprops=dict(arrowstyle="->", connectionstyle="arc3, rad=0"), bbox=dict(boxstyle="round", facecolor="w"))
+    ax.annotate("Sigma 3 minus", xy=(sigma3_m, 0.0), xycoords='data', xytext=(sigma3_m, 0.1*amp), textcoords='data', size=8, horizontalalignment="center", arrowprops=dict(arrowstyle="->", connectionstyle="arc3, rad=0"), bbox=dict(boxstyle="round", facecolor="w"))
 
     # Set limits.
     xlim = (mu-5*sigma, mu+25*sigma)
@@ -1059,14 +1067,41 @@ if __name__ == "__main__":
         res_dic[sf_dir]['ref']['udic'] = udic_ref
         res_dic[sf_dir]['ref']['data'] = data_ref
 
+
         # Make a histogram
         ax, amp, mu, sigma, xlim_ref, ylim_ref = hist_plot(ndarray=data_ref, show=False)
         res_dic[sf_dir]['ref']['hist'] = [amp, mu, sigma]
+
         png_path = startdir + os.sep + "hist_%s_ref.png"%(sf_dir)
         plt.savefig(png_path, format='png', dpi=600)
         # Close figure.
         plt.close("all")
-            
+
+        # Flatten data
+        data_ref_flat = data_ref.flatten()
+
+        # Make selection masks
+        sigma3 = mu + 3*sigma
+        sigma10 = mu + 10*sigma
+        sigma100 = mu + 100*sigma
+        sigma1000 = mu + 1000*sigma
+
+        mask_to_sigma3 = masked_where(data_ref_flat < sigma3, data_ref_flat)
+        mask_3_to_10 = masked_where( numpy.logical_and( sigma3 <= data_ref_flat, data_ref_flat < sigma10) , data_ref_flat)
+        mask_10_to_100 = masked_where( numpy.logical_and( sigma10 <= data_ref_flat, data_ref_flat < sigma100) , data_ref_flat)
+        mask_100_to_1000 = masked_where( numpy.logical_and( sigma100 <= data_ref_flat, data_ref_flat < sigma1000 ) , data_ref_flat)
+        mask_from_1000 = masked_where( sigma1000 <= data_ref_flat, data_ref_flat)
+
+        ## Collect masks for graphs and their hex color.
+        sn_masks = [
+        [r'$I < 3\sigma$', "#FC0000", mask_to_sigma3], 
+        [r'$3\sigma \leq I < 10\sigma$', "#F0FC00", mask_3_to_10],
+        [r'$10\sigma \leq I < 100\sigma$', "#0DFC00", mask_10_to_100],
+        [r'$100\sigma \leq I < 1000\sigma$', "#00FCF8", mask_100_to_1000],
+        [r'$1000\sigma \leq I\sigma$', "#FC00F8", mask_from_1000],
+        ]
+
+     
         # Then create ni dirs.
         for j, ni_dir in enumerate(ni_dirs):
             create_ni_dir = create_sf_dir + os.sep + ni_dir
@@ -1197,6 +1232,8 @@ if __name__ == "__main__":
             else:
                 print("File exists. I do not produce .ft2 file again.: %s"%path_ft2_file)
 
+        print("Now making figures and reports.")
+
         # Then collect showApod rmsd
         # Get showApod
         for j, proc_dir in enumerate(all_proc_dirs):
@@ -1225,39 +1262,49 @@ if __name__ == "__main__":
             ax.set_ylim(ylim_ref)
 
             png_path = startdir + os.sep + "hist_%s_%s.png"%(sf_dir, proc_dir)
-            plt.savefig(png_path, format='png', dpi=600)
+            if not os.path.isfile(png_path):
+                plt.savefig(png_path, format='png', dpi=600)
             # Close figure.
             plt.close("all")
+            print("Made figure: %s"%png_path)
 
             # Make a correlation plot
             fig = plt.figure()
             ax = fig.add_subplot(111)
 
             # Flatten data
-            data_ref_flat = data_ref.flatten()
             data_cur_flat = data_cur.flatten()
-
-            # Make line.
-            line = numpy.array( [data_ref_flat.min(), data_ref_flat.max()] )
 
             # Try get the linear correlation
             a, r_xy = linear_corr(x=data_ref_flat, y=data_cur_flat)
             res_dic[sf_dir][proc_dir]['corr'] = [a, r_xy]
 
-            ax.plot(data_ref_flat, data_ref_flat*a, 'b-', linewidth=0.2, label='corr')
+            # Make line.
+            line = numpy.array( [data_ref_flat.min(), data_ref_flat.max()] )
+            ax.plot(line, line, 'g-', linewidth=0.5, label='ref vs ref.')
+            ax.plot(line, line*a, 'b-', linewidth=0.2, label='Linear')
 
-            ax.plot(data_ref_flat, data_cur_flat, 'b.', markersize=2, label='all int')
-            ax.plot(line, line, 'g-', linewidth=0.5, label='corr')
+            # Loop over data mask
+            for label, color, sel_mask in sn_masks:
+                if type(data_ref_flat[sel_mask.mask]) != numpy.ndarray:
+                    continue
+                #ax.plot(data_ref_flat, data_cur_flat, 'b.', markersize=2, label='all int')
+                pct = float(len(data_ref_flat[sel_mask.mask])) / float(len(data_ref_flat)) * 100.
+                ax.plot(data_ref_flat[sel_mask.mask], data_cur_flat[sel_mask.mask], '.', color=color, markersize=2, label='%s , pct=%2.1f'%(label, pct))
 
             # Set text.
             ax.set_xlabel("All spectrum intensities for reference")
             ax.set_ylabel("All spectrum intensities for method")
             ax.annotate("a=%3.6f\nr_xy=%3.6f\nr_xy^2=%3.6f"%(a, r_xy, r_xy**2), xy=(data_ref_flat.min(), data_cur_flat.max()), xycoords="data", size=8, va="center", horizontalalignment="center", bbox=dict(boxstyle="round", facecolor="w"))
 
+            ax.legend(loc='lower right', prop={'size':6})
+
             png_path = startdir + os.sep + "corr_%s_%s.png"%(sf_dir, proc_dir)
+            #if not os.path.isfile(png_path):
             plt.savefig(png_path, format='png', dpi=600)
             # Close figure.
             plt.close("all")
+            print("Made figure: %s"%png_path)
 
         # Now make report for Hist
         hist_results_name = startdir + os.sep + "hist_%s_results.txt"%(sf_dir)
@@ -1295,8 +1342,54 @@ if __name__ == "__main__":
 
         # Write data
         write_data(out=corr_results, headings=headers, data=datacsv)
-
         corr_results.close()
+
+        # Now make a residual histogram.
+        # Since the intensities are modulated by 1.2, we use the full 00_ref.proc as reference.
+        data_ref = res_dic[sf_dir]['00_ref.proc']['data']
+
+        # Loop over all proc dirs.
+        for j, proc_dir in enumerate(proc_dirs):
+            data_cur = res_dic[sf_dir][proc_dir]['data']
+
+            # Data residual
+            data_resi = data_cur - data_ref
+
+            # Make a histogram
+            ax, amp, mu, sigma, xlim, ylim = hist_plot(ndarray=data_resi, show=False)
+            res_dic[sf_dir][proc_dir]['residual_hist'] = [amp, mu, sigma]
+
+            # Set same limits as ref
+            ax.set_xlim(mu-6*sigma, mu+6*sigma)
+            #ax.set_ylim(ylim_ref)
+
+            png_path = startdir + os.sep + "residual_hist_%s_%s.png"%(sf_dir, proc_dir)
+            if not os.path.isfile(png_path):
+                plt.savefig(png_path, format='png', dpi=600)
+            # Close figure.
+            plt.close("all")
+            print("Made figure: %s"%png_path)
+
+        # Now make report for Residual Hist
+        hist_results_name = startdir + os.sep + "residual_hist_%s_results.txt"%(sf_dir)
+        hist_results = open(hist_results_name, 'w')
+
+        # Collect header
+        headers = ['i', 'data', 'hist_sigma', 'hist_amp', 'hist_mu', ]
+
+        # Collect data
+        datacsv = []
+
+        for j, proc_dir in enumerate(proc_dirs):
+            datacsv_cur = ["%02d"%(j+2), '%11s'%proc_dir, '%4.2f'%res_dic[sf_dir][proc_dir]['residual_hist'][2], '%4.2f'%res_dic[sf_dir][proc_dir]['residual_hist'][0], '%4.2f'%res_dic[sf_dir][proc_dir]['residual_hist'][1]]
+            datacsv.append(datacsv_cur)
+
+        # Write data
+        write_data(out=hist_results, headings=headers, data=datacsv)
+        hist_results.close()
+
+
+
 
     # Print elapsed time for running script.
     elapsed_time = time.time() - start_time
