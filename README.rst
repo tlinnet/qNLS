@@ -39,7 +39,7 @@ Where sf is the sampling fractions in percent.
 
 The script then proceeds as follows:
 
-* Loop over the sampling fraction level: 
+1. Loop over the sampling fraction level: 
   * Produce nls.in
     * Numper of points in direct and in-direct dimensions, and sweep-width (Hz) are read from test.fid with nmrglue.
     * In 00_ref.fid, write nls.in at 100 sf level
