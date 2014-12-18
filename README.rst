@@ -21,16 +21,16 @@ Data requirement
 ================
 First record one full experiment, for example the reference spectrum.
 
-Process the spectrum with NMRPipe, to produce:
-fid (original file)
-fid.com which produces test.fid
-nmrproc.com which produces test.ft2 from test.fid
+| Process the spectrum with NMRPipe, to produce:  
+| fid (original file)  
+| fid.com which produces test.fid  
+| nmrproc.com which produces test.ft2 from test.fid  
 
-The script expects that names of files in the directory are:
-fid
-fid.com
-test.fid
-nmrproc.com
+| The script expects that names of files in the directory are:  
+| fid  
+| fid.com  
+| test.fid  
+| nmrproc.com  
 
 =================
 Outline of script
