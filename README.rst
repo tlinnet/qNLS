@@ -63,10 +63,23 @@ python module depencies for the script
 | **nmrglue**, to read spectrum as numpy array  
 | **matplotlib.pyplot**, to produce figures  
 | **scipy.optimize**, to fit histogram  
-| **numpy'', for data arrays  
+| **numpy**, for data arrays  
+
+If problems, try see this wiki page: http://wiki.nmr-relax.com/Epd_canopy
 
 MddNMR
 ------
+The following programs should be in your PATH.
+
+Try write in your terminal "which mddnmr4pipeN.sh", to see if they are available.
+
+MddNMR
+* mddnmr4pipeN.sh
+* setHD
+* queMM.sh
+
+NMRPipe programs
+* showApod
 
 
 ======================
