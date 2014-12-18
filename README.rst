@@ -73,12 +73,12 @@ The following programs should be in your PATH.
 
 Try write in your terminal "which mddnmr4pipeN.sh", to see if they are available.
 
-MddNMR
+| MddNMR  
 | **mddnmr4pipeN.sh**  
 | **setHD**  
 | **queMM.sh**  
 
-NMRPipe programs
+| NMRPipe programs  
 | **showApod**  
 
 
