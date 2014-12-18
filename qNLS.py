@@ -46,7 +46,7 @@ start_time = time.time()
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-N', nargs='?', type=int, metavar='N', dest='N', default=1, help='Number of repeated spectra. -N 1')
-parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[20, 15, 10, 6], help='list of sampling fractions in percent: -sf 15 10 5')
+parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[40, 36, 32, 28, 24, 20, 16, 12, 8], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
 parser.add_argument('-T2', nargs='?', type=float, metavar='T2', dest='T2', default=0.1, help='T2: spin-spin relaxation time, the expected time constant characterizing the signal decay in in-direct dimension (s): -T2 0.1.')
 parser.add_argument('-FST_PNT_PPM', nargs='?', type=float, metavar='FST_PNT_PPM', dest='FST_PNT_PPM', default=11, help='MDD param: Define from where the region of interest starts in the direct dimension [ppm]: -FST_PNT_PPM 11')
 parser.add_argument('-ROISW', nargs='?', type=float, metavar='ROISW', dest='ROISW', default=5, help='MDD param: Define sweep-width in ppm, to subtract from FST_PNT_PPM: -ROISW 5')
@@ -1094,11 +1094,11 @@ if __name__ == "__main__":
 
         ## Collect masks for graphs and their hex color.
         sn_masks = [
-        [r'$I < 3\sigma$', "#FC0000", mask_to_sigma3], 
-        [r'$3\sigma \leq I < 10\sigma$', "#F0FC00", mask_3_to_10],
-        [r'$10\sigma \leq I < 100\sigma$', "#0DFC00", mask_10_to_100],
-        [r'$100\sigma \leq I < 1000\sigma$', "#00FCF8", mask_100_to_1000],
-        [r'$1000\sigma \leq I\sigma$', "#FC00F8", mask_from_1000],
+        [r'$I < 3\sigma$', "#FC0000", mask_to_sigma3, 'to_s3'], 
+        [r'$3\sigma \leq I < 10\sigma$', "#F0FC00", mask_3_to_10, 's3_to_10'],
+        [r'$10\sigma \leq I < 100\sigma$', "#0DFC00", mask_10_to_100, 's10_to_s100'],
+        [r'$100\sigma \leq I < 1000\sigma$', "#00FCF8", mask_100_to_1000, 's100_to_s1000'],
+        [r'$1000\sigma \leq I\sigma$', "#FC00F8", mask_from_1000, 'from_s1000'],
         ]
 
      
@@ -1284,13 +1284,24 @@ if __name__ == "__main__":
             ax.plot(line, line, 'g-', linewidth=0.5, label='ref vs ref.')
             ax.plot(line, line*a, 'b-', linewidth=0.2, label='Linear')
 
+            # Collect for different signal levels.
+            sn_masks_used = []
+            res_dic[sf_dir][proc_dir]['corr_s'] = {}
+
             # Loop over data mask
-            for label, color, sel_mask in sn_masks:
+            for label, color, sel_mask, dickey in sn_masks:
                 if type(data_ref_flat[sel_mask.mask]) != numpy.ndarray:
                     continue
+                sn_masks_used.append(dickey)
+
                 #ax.plot(data_ref_flat, data_cur_flat, 'b.', markersize=2, label='all int')
-                pct = float(len(data_ref_flat[sel_mask.mask])) / float(len(data_ref_flat)) * 100.
-                ax.plot(data_ref_flat[sel_mask.mask], data_cur_flat[sel_mask.mask], '.', color=color, markersize=2, label='%s , pct=%2.1f'%(label, pct))
+                data_ref_mask = data_ref_flat[sel_mask.mask]
+                data_cur_mask = data_cur_flat[sel_mask.mask]
+                pct = float(len(data_ref_mask)) / float(len(data_ref_flat)) * 100.
+                a_mask, r_xy_mask = linear_corr(x=data_ref_mask, y=data_cur_mask)
+                res_dic[sf_dir][proc_dir]['corr_s'][dickey] = [a_mask, r_xy_mask]
+
+                ax.plot(data_ref_mask, data_cur_mask, '.', color=color, markersize=2, label='%s , pct=%2.1f, a=%1.2f, r_xy^2=%3.6f'%(label, pct, a_mask, r_xy_mask**2))
 
             # Set text.
             ax.set_xlabel("All spectrum intensities for reference")
@@ -1331,13 +1342,26 @@ if __name__ == "__main__":
         corr_results = open(corr_results_name, 'w')
 
         # Collect header
-        headers = ['i', 'data', 'a', 'r_xy', 'r_xy^2']
+        #headers = ['i', 'data', 'a', 'r_xy', 'r_xy^2']
+        headers = ['i', 'data', 'a', 'r_xy^2']
+
+        for dickey in sn_masks_used:
+            headers.append('a_%s'%dickey)
+            #headers.append('r_xy_%s'%dickey)
+            headers.append('r_xy^2_%s'%dickey)
 
         # Collect data
         datacsv = []
 
         for j, proc_dir in enumerate(all_proc_dirs):
-            datacsv_cur = ["%02d"%(j+1), '%11s'%proc_dir, '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][0], '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][1], '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][1]**2]
+            #datacsv_cur = ["%02d"%(j+1), '%11s'%proc_dir, '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][0], '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][1], '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][1]**2]
+            datacsv_cur = ["%02d"%(j+1), '%11s'%proc_dir, '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][0], '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][1]**2]
+
+            for dickey in sn_masks_used:
+                datacsv_cur.append('%3.6f'%res_dic[sf_dir][proc_dir]['corr_s'][dickey][0])
+                #datacsv_cur.append('%3.6f'%res_dic[sf_dir][proc_dir]['corr_s'][dickey][1])
+                datacsv_cur.append('%3.6f'%res_dic[sf_dir][proc_dir]['corr_s'][dickey][1]**2)
+
             datacsv.append(datacsv_cur)
 
         # Write data
@@ -1387,9 +1411,6 @@ if __name__ == "__main__":
         # Write data
         write_data(out=hist_results, headings=headers, data=datacsv)
         hist_results.close()
-
-
-
 
     # Print elapsed time for running script.
     elapsed_time = time.time() - start_time
