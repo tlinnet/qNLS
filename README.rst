@@ -41,13 +41,13 @@ The script then proceeds as follows:
 
 1. Loop over the sampling fraction level: 
   * Produce nls.in
-    * Numper of points in direct and in-direct dimensions, and sweep-width (Hz) are read from test.fid with nmrglue.
-    * In 00_ref.fid, write nls.in at 100 sf level
-    * In 01.fid, write nls.in according to the sampling fraction level
+    ; Numper of points in direct and in-direct dimensions, and sweep-width (Hz) are read from test.fid with nmrglue.
+    ; In 00_ref.fid, write nls.in at 100 sf level
+    ; In 01.fid, write nls.in according to the sampling fraction level
   * Produce nusschedules with 'nussampler' from MddNMR within each *.fid folder
   * Binary read the orginal fid file, and write out a truncated fid file in each *.fid folder according to the nusschedule.
-    * The individual fid file only contains the in-direct FIDs determined and ordered from the nusscedule.
-    * The 00_ref.fid then contains the full fid, but where the in-direct FIDs have been shuffled according to the full nusscedule.
+    ; The individual fid file only contains the in-direct FIDs determined and ordered from the nusscedule.
+    ; The 00_ref.fid then contains the full fid, but where the in-direct FIDs have been shuffled according to the full nusscedule.
   * Then write proc.sh, which is command file with environment settings to MddNMR. These settings can be modified by parsing input commands to qNLS.py
   * Then write fidSP.com and recFT.com. These are spectrum processing parameters, and these are read from the initial files of fid.com, and nmrproc.com.
   * Then produce files for coMDD processing.
