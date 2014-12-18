@@ -2,6 +2,10 @@
 qNLS 
 ====
 
+| Made by
+| Copyright (C) 2014 Troels E. Linnet, SBiNLab, Copenhagen University  
+| Copyright (C) 2014 Kaare Teilum, SBiNLab, Copenhagen University  
+
 Asses quality of NLS for coMDD processing.
 
 A python script to quickly evaluate effect of co-processing several 2D spectra together.
