@@ -25,7 +25,7 @@ First record one full experiment, for example the reference spectrum.
 | fid (original file)  
 | fid.com which produces test.fid  
 | nmrproc.com which produces test.ft2 from test.fid  
-
+|  
 | The script expects that names of files in the directory are:  
 | fid  
 | fid.com  
