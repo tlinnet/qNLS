@@ -1316,7 +1316,7 @@ if __name__ == "__main__":
 
             # Loop over data mask
              #ax.plot(data_ref_flat, data_cur_flat, 'b.', markersize=2, label='all int')
-            for label, color, sel_mask, dickey in sn_masks:
+            for label, color, sel_mask, dickey, pct in sn_masks_used:
                 data_ref_mask = data_ref_flat[sel_mask.mask]
                 data_cur_mask = data_cur_flat[sel_mask.mask]
                 a_mask, r_xy_mask = linear_corr(x=data_ref_mask, y=data_cur_mask)
