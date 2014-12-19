@@ -713,6 +713,9 @@ def write_proc(dir=None, FID=None, NUS_POINTS=None, FST_PNT_PPM=None, ROISW=None
     wfile_name_proc_comdd_after = dir + os.sep + 'proc_comdd_after.sh'
     wfile_proc_comdd_after = open(wfile_name_proc_comdd_after, "w")
 
+    wfile_name_proc_mdd = dir + os.sep + 'proc_mdd.sh'
+    wfile_proc_mdd = open(wfile_name_proc_mdd, "w")
+
     lines = [
     "#!/bin/tcsh",
     "setenv FID %s"%FID,
@@ -722,7 +725,6 @@ def write_proc(dir=None, FID=None, NUS_POINTS=None, FST_PNT_PPM=None, ROISW=None
     "setenv selection_file nls.hdr_3",
     "setenv FST_PNT_PPM %s"%FST_PNT_PPM,
     "setenv ROISW %s"%ROISW,
-    "setenv proc_out test.ft2",
     "setenv NUS_POINTS           %i"%NUS_POINTS,
     "setenv NUS_TABLE_OFFSET     0",
     "setenv SRSIZE               %s"%SRSIZE,
@@ -739,18 +741,25 @@ def write_proc(dir=None, FID=None, NUS_POINTS=None, FST_PNT_PPM=None, ROISW=None
     for line in lines:
         wfile_proc_comdd_before.write(line + "\n")
         wfile_proc_comdd_after.write(line + "\n")
+        wfile_proc_mdd.write(line + "\n")
 
     # Then write independent
+    wfile_proc_comdd_before.write("setenv proc_out test.ft2" + "\n")
+    wfile_proc_comdd_after.write("setenv proc_out test.ft2" + "\n")
+    wfile_proc_mdd.write("setenv proc_out test.ft2" + "\n")
     wfile_proc_comdd_before.write("mddnmr4pipeN.sh 1 23" + "\n")
     wfile_proc_comdd_after.write("mddnmr4pipeN.sh 4 5" + "\n")
+    wfile_proc_mdd.write("mddnmr4pipeN.sh 1 2 3 4 5" + "\n")
 
     # Close files.
     wfile_proc_comdd_before.close()
     wfile_proc_comdd_after.close()
+    wfile_proc_mdd.close()
 
     # Then make files executable.
     os.chmod(wfile_name_proc_comdd_before, S_IRWXU|S_IRGRP|S_IROTH)
     os.chmod(wfile_name_proc_comdd_after, S_IRWXU|S_IRGRP|S_IROTH)
+    os.chmod(wfile_name_proc_mdd, S_IRWXU|S_IRGRP|S_IROTH)
 
     # Now write a proc file, which is only for FT
     wfile_name_proc_FT = dir + os.sep + 'proc_FT.sh'
@@ -1045,9 +1054,9 @@ if __name__ == "__main__":
             # Change back again
             os.chdir(cwd)
 
-        # Produce FT file for reference.
-        path_ref_FT_ft2file = create_proc_ref_dir + os.sep + 'test_FT.ft2'
-        if not os.path.exists(path_ref_FT_ft2file):
+        # Producefile for reference.
+        path_ref_REF_ft2file = create_proc_ref_dir + os.sep + 'test_FT.ft2'
+        if not os.path.exists(path_ref_REF_ft2file):
             # Change current directory
             os.chdir(create_proc_ref_dir)
             # Call script to create files.
@@ -1056,13 +1065,13 @@ if __name__ == "__main__":
             os.chdir(cwd)
 
         # Now read data for reference
-        returncode, line_split = call_prog(args=['showApod', path_ref_FT_ft2file], verbose=False)
+        returncode, line_split = call_prog(args=['showApod', path_ref_REF_ft2file], verbose=False)
         rmsd = extract_rmsd(lines=line_split)
         res_dic[sf_dir]['ref'] = {}
         res_dic[sf_dir]['ref']['rmsd'] = rmsd
 
         # With nmrglue, read the fourier transformed spectrum to get information.
-        dic_ref, udic_ref, data_ref = read_spectrum(file=path_ref_FT_ft2file)
+        dic_ref, udic_ref, data_ref = read_spectrum(file=path_ref_REF_ft2file)
         res_dic[sf_dir]['ref']['dic'] = dic_ref
         res_dic[sf_dir]['ref']['udic'] = udic_ref
         res_dic[sf_dir]['ref']['data'] = data_ref
@@ -1322,6 +1331,8 @@ if __name__ == "__main__":
                 a_mask, r_xy_mask = linear_corr(x=data_ref_mask, y=data_cur_mask)
                 res_dic[sf_dir][proc_dir]['corr_s'][dickey] = [a_mask, r_xy_mask]
 
+                
+
                 ax.plot(data_ref_mask, data_cur_mask, '.', color=color, markersize=2, label='%s , pct=%2.1f, a=%1.2f, r_xy^2=%3.6f'%(label, pct, a_mask, r_xy_mask**2))
 
             # Set text.
@@ -1347,7 +1358,7 @@ if __name__ == "__main__":
 
         # Collect data
         datacsv = []
-        datacsv_ref = ["00", '%11s'%'FT', '%4.2f'%res_dic[sf_dir]['ref']['rmsd'], '%4.2f'%res_dic[sf_dir]['ref']['hist'][2], '%4.2f'%res_dic[sf_dir]['ref']['hist'][0], '%4.2f'%res_dic[sf_dir]['ref']['hist'][1]]
+        datacsv_ref = ["00", '%11s'%'REF', '%4.2f'%res_dic[sf_dir]['ref']['rmsd'], '%4.2f'%res_dic[sf_dir]['ref']['hist'][2], '%4.2f'%res_dic[sf_dir]['ref']['hist'][0], '%4.2f'%res_dic[sf_dir]['ref']['hist'][1]]
         datacsv.append(datacsv_ref)
 
         for j, proc_dir in enumerate(all_proc_dirs):
