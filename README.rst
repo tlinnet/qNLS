@@ -62,40 +62,24 @@ The script then proceeds as follows:
 =================
 Options to script
 =================
+Get help by writing:
+
 qNLS.py -h
 
-    usage: qNLS.py [-h] [-N [N]] [-sf sf [sf ...]] [-T2 [T2]]
-               [-FST_PNT_PPM [FST_PNT_PPM]] [-ROISW [ROISW]]
-               [-SRSIZE [SRSIZE]] [-CEXP [CEXP]] [-MDDTHREADS [MDDTHREADS]]
-               [-NCOMP [NCOMP]] [-NITER [NITER]] [-MDD_NOISE [MDD_NOISE]]
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      -N [N]                Number of repeated spectra. -N 1
-      -sf sf [sf ...]       list of sampling fractions in percent: -sf 24 20 16 12 8
-      -T2 [T2]              T2: spin-spin relaxation time, the expected time
-                            constant characterizing the signal decay in in-direct
-                            dimension (s): -T2 0.1.
-      -FST_PNT_PPM [FST_PNT_PPM]
-                            MDD param: Define from where the region of interest
-                            starts in the direct dimension [ppm]: -FST_PNT_PPM 11
-      -ROISW [ROISW]        MDD param: Define sweep-width in ppm, to subtract from
-                            FST_PNT_PPM: -ROISW 5
-      -SRSIZE [SRSIZE]      MDD param: Size of sub-region (ppm): -SRSIZE 0.1
-      -CEXP [CEXP]          Toggle R-MDD / MDD mode. For a dimension, with "y"
-                            time domain shape in the dimension is expected to be
-                            autoregressive. In other words, we assume that the FID
-                            in the dimension is a complex exponent. CEXP=y may be
-                            used, for example, for HNCO and HNcoCA experiments,
-                            but not for the NOESYs: -CEXP yn
-      -MDDTHREADS [MDDTHREADS]
-                            MDD param: Maximal number of parallel processes:
-                            -MDDTHREADS 16
-      -NCOMP [NCOMP]        MDD param: Number of components per sub-region: -NCOMP
-                            25
-      -NITER [NITER]        MDD param: number of iteration in mddnmr: -NITER 50
-      -MDD_NOISE [MDD_NOISE]
-                            MDD param: Noise in mddnmr: -MDD_NOISE 0.7
+| -h, --help            show this help message and exit  
+| -N [N]                Number of repeated spectra. -N 1  
+| -sf sf [sf ...]       list of sampling fractions in percent: -sf 24 20 16 12 8  
+| -T2 [T2]              T2: spin-spin relaxation time, the expected time constant characterizing the signal decay in in-direct dimension (s): -T2 0.1.  
+| -FST_PNT_PPM [FST_PNT_PPM] MDD param: Define from where the region of interest starts in the direct dimension [ppm]: -FST_PNT_PPM 11  
+| -ROISW [ROISW]        MDD param: Define sweep-width in ppm, to subtract from FST_PNT_PPM: -ROISW 5  
+| -SRSIZE [SRSIZE]      MDD param: Size of sub-region (ppm): -SRSIZE 0.1  
+| -CEXP [CEXP]          Toggle R-MDD / MDD mode. For a dimension, with "y" time domain shape in the dimension is expected to be autoregressive.  
+|                       In other words, we assume that the FID in the dimension is a complex exponent.  
+|                       CEXP=y may be used, for example, for HNCO and HNcoCA experiments, but not for the NOESYs: -CEXP yn
+| -MDDTHREADS [MDDTHREADS] MDD param: Maximal number of parallel processes: -MDDTHREADS 16  
+| -NCOMP [NCOMP]        MDD param: Number of components per sub-region: -NCOMP 25  
+| -NITER [NITER]        MDD param: number of iteration in mddnmr: -NITER 50  
+| -MDD_NOISE [MDD_NOISE] MDD param: Noise in mddnmr: -MDD_NOISE 0.7  
 
 ==================
 Software depencies
