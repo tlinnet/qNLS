@@ -46,7 +46,7 @@ start_time = time.time()
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-N', nargs='?', type=int, metavar='N', dest='N', default=1, help='Number of repeated spectra. -N 1')
-parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[40, 36, 32, 28, 24, 20, 16, 12, 8], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
+parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[16, 12, 8], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
 parser.add_argument('-T2', nargs='?', type=float, metavar='T2', dest='T2', default=0.1, help='T2: spin-spin relaxation time, the expected time constant characterizing the signal decay in in-direct dimension (s): -T2 0.1.')
 parser.add_argument('-FST_PNT_PPM', nargs='?', type=float, metavar='FST_PNT_PPM', dest='FST_PNT_PPM', default=11, help='MDD param: Define from where the region of interest starts in the direct dimension [ppm]: -FST_PNT_PPM 11')
 parser.add_argument('-ROISW', nargs='?', type=float, metavar='ROISW', dest='ROISW', default=5, help='MDD param: Define sweep-width in ppm, to subtract from FST_PNT_PPM: -ROISW 5')
@@ -1101,7 +1101,34 @@ if __name__ == "__main__":
         [r'$1000\sigma \leq I\sigma$', "#FC00F8", mask_from_1000, 'from_s1000'],
         ]
 
-     
+        # Now make report for pct
+        pct_results_name = startdir + os.sep + "pct_%s_results.txt"%(sf_dir)
+        pct_results = open(pct_results_name, 'w')
+
+        # Collect header
+        headers = []
+
+        # Collect data
+        datacsv = []
+
+        sn_masks_used = []
+        for label, color, sel_mask, dickey in sn_masks:
+            data_ref_mask = data_ref_flat[sel_mask.mask]
+
+            if type(data_ref_mask) != numpy.ndarray:
+                continue
+            pct = float(len(data_ref_mask)) / float(len(data_ref_flat)) * 100.
+
+            sn_masks_used.append([label, color, sel_mask, dickey, pct])
+
+            headers.append(dickey)
+            datacsv.append("%2.1f"%pct)
+
+        # Write data
+
+        write_data(out=pct_results, headings=headers, data=[datacsv])
+        pct_results.close()
+
         # Then create ni dirs.
         for j, ni_dir in enumerate(ni_dirs):
             create_ni_dir = create_sf_dir + os.sep + ni_dir
@@ -1285,19 +1312,13 @@ if __name__ == "__main__":
             ax.plot(line, line*a, 'b-', linewidth=0.2, label='Linear')
 
             # Collect for different signal levels.
-            sn_masks_used = []
             res_dic[sf_dir][proc_dir]['corr_s'] = {}
 
             # Loop over data mask
+             #ax.plot(data_ref_flat, data_cur_flat, 'b.', markersize=2, label='all int')
             for label, color, sel_mask, dickey in sn_masks:
-                if type(data_ref_flat[sel_mask.mask]) != numpy.ndarray:
-                    continue
-                sn_masks_used.append(dickey)
-
-                #ax.plot(data_ref_flat, data_cur_flat, 'b.', markersize=2, label='all int')
                 data_ref_mask = data_ref_flat[sel_mask.mask]
                 data_cur_mask = data_cur_flat[sel_mask.mask]
-                pct = float(len(data_ref_mask)) / float(len(data_ref_flat)) * 100.
                 a_mask, r_xy_mask = linear_corr(x=data_ref_mask, y=data_cur_mask)
                 res_dic[sf_dir][proc_dir]['corr_s'][dickey] = [a_mask, r_xy_mask]
 
@@ -1345,7 +1366,7 @@ if __name__ == "__main__":
         #headers = ['i', 'data', 'a', 'r_xy', 'r_xy^2']
         headers = ['i', 'data', 'a', 'r_xy^2']
 
-        for dickey in sn_masks_used:
+        for label, color, sel_mask, dickey, pct in  sn_masks_used:
             headers.append('a_%s'%dickey)
             #headers.append('r_xy_%s'%dickey)
             headers.append('r_xy^2_%s'%dickey)
@@ -1357,7 +1378,7 @@ if __name__ == "__main__":
             #datacsv_cur = ["%02d"%(j+1), '%11s'%proc_dir, '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][0], '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][1], '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][1]**2]
             datacsv_cur = ["%02d"%(j+1), '%11s'%proc_dir, '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][0], '%3.6f'%res_dic[sf_dir][proc_dir]['corr'][1]**2]
 
-            for dickey in sn_masks_used:
+            for label, color, sel_mask, dickey, pct in  sn_masks_used:
                 datacsv_cur.append('%3.6f'%res_dic[sf_dir][proc_dir]['corr_s'][dickey][0])
                 #datacsv_cur.append('%3.6f'%res_dic[sf_dir][proc_dir]['corr_s'][dickey][1])
                 datacsv_cur.append('%3.6f'%res_dic[sf_dir][proc_dir]['corr_s'][dickey][1]**2)
