@@ -1076,7 +1076,6 @@ if __name__ == "__main__":
         res_dic[sf_dir]['ref']['udic'] = udic_ref
         res_dic[sf_dir]['ref']['data'] = data_ref
 
-
         # Make a histogram
         ax, amp, mu, sigma, xlim_ref, ylim_ref = hist_plot(ndarray=data_ref, show=False)
         res_dic[sf_dir]['ref']['hist'] = [amp, mu, sigma]
@@ -1127,14 +1126,12 @@ if __name__ == "__main__":
             if type(data_ref_mask) != numpy.ndarray:
                 continue
             pct = float(len(data_ref_mask)) / float(len(data_ref_flat)) * 100.
-
             sn_masks_used.append([label, color, sel_mask, dickey, pct])
 
             headers.append(dickey)
             datacsv.append("%2.1f"%pct)
 
         # Write data
-
         write_data(out=pct_results, headings=headers, data=[datacsv])
         pct_results.close()
 
@@ -1270,6 +1267,13 @@ if __name__ == "__main__":
 
         print("Now making figures and reports.")
 
+        # First find the linear difference between ref, and the full data.
+        path_ref_FULL_ft2file = create_proc_ref_dir + os.sep + 'test.ft2'
+
+        # With nmrglue, read the fourier transformed spectrum to get information.
+        dic_ref_full, udic_ref_full, data_ref_full = read_spectrum(file=path_ref_FULL_ft2file)
+        a_dev, r_xy_dev = linear_corr(x=data_ref_flat, y=data_ref_full.flatten())
+
         # Then collect showApod rmsd
         # Get showApod
         for j, proc_dir in enumerate(all_proc_dirs):
@@ -1331,9 +1335,10 @@ if __name__ == "__main__":
                 a_mask, r_xy_mask = linear_corr(x=data_ref_mask, y=data_cur_mask)
                 res_dic[sf_dir][proc_dir]['corr_s'][dickey] = [a_mask, r_xy_mask]
 
-                
-
-                ax.plot(data_ref_mask, data_cur_mask, '.', color=color, markersize=2, label='%s , pct=%2.1f, a=%1.2f, r_xy^2=%3.6f'%(label, pct, a_mask, r_xy_mask**2))
+                deviation = data_cur_mask - a_dev * data_ref_mask
+                rmsd = numpy.sqrt(numpy.mean(numpy.square(deviation)))
+               
+                ax.plot(data_ref_mask, data_cur_mask, '.', color=color, markersize=2, label='%s , pct=%2.1f, a=%1.2f, r_xy^2=%3.4f, rmsd=%3.4f'%(label, pct, a_mask, r_xy_mask**2, rmsd))
 
             # Set text.
             ax.set_xlabel("All spectrum intensities for reference")
