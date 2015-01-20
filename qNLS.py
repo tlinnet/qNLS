@@ -2,8 +2,8 @@
 
 ###############################################################################
 #                                                                             #
-# Copyright (C) 2014 Troels E. Linnet, SBiNLab, Copenhagen University         #
-# Copyright (C) 2014 Kaare Teilum, SBiNLab, Copenhagen University             #
+# Copyright (C) 2014-2015 Troels E. Linnet, SBiNLab, Copenhagen University    #
+# Copyright (C) 2014-2015 Kaare Teilum, SBiNLab, Copenhagen University        #
 #                                                                             #
 # This file is part of the program relax (http://www.nmr-relax.com).          #
 #                                                                             #
@@ -26,6 +26,7 @@ import csv
 import glob
 import nmrglue
 import matplotlib.pyplot as plt
+import matplotlib.cm
 import numpy
 from numpy.ma import masked_where
 import os
@@ -941,6 +942,71 @@ def write_data(out=None, headings=None, data=None, sep=None):
             out.write('\n')
 
 
+def contour_plot(dic=None, udic=None, data=None, contour_start=30000., contour_num=20, contour_factor=1.20, ppm=True, show=False):
+    """Plot the spectrum as contour plot.
+
+    @keyword dic:               The data dictionary, from nmrglue.
+    @type dic:                  dict
+    @keyword udic:              The universal dictionary, from nmrglue.
+    @type udic:                 dict
+    @keyword data:              The spectrum data as 2D numpy array.
+    @type data:                 2D numpy array
+    @keyword contour_start:     Contour level start value
+    @type contour_start:        float
+    @keyword contour_num:       Number of contour levels
+    @type contour_num:          int
+    @keyword contour_factor:    Scaling factor between contour levels
+    @type contour_factor:       float
+    @keyword ppm:               A flag which if True will make the plot in ppm scale. Else it is in points.
+    @type ppm:                  bool
+    @keyword show:              A flag which if True will make a call to matplotlib.pyplot.show().
+    @type show:                 bool
+    @return:                    The matplotlib.axes.AxesSubplot class, which can be manipulated to add additional text to the axis.
+    @rtype:                     matplotlib.axes.AxesSubplot
+    """
+
+    # Setup plot parameters
+    # contour map (colors to use for contours)
+    cmap = matplotlib.cm.Blues_r
+
+    # Calculate contour levels
+    cl = contour_start * contour_factor ** numpy.arange(contour_num)
+
+    # Create the figure
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    # Plot the contours
+
+    # Plot in ppm scale
+    if ppm:
+        # make ppm scales
+        uc_dim1 = nmrglue.pipe.make_uc(dic, data, dim=1)
+        ppm_dim1 = uc_dim1.ppm_scale()
+        ppm_dim1_0, ppm_dim1_1 = uc_dim1.ppm_limits()
+        uc_dim0 = nmrglue.pipe.make_uc(dic, data, dim=0)
+        ppm_dim0 = uc_dim0.ppm_scale()
+        ppm_dim0_0, ppm_dim0_1 = uc_dim0.ppm_limits()
+
+        ax.contour(data.T, cl, cmap=cmap, extent=(ppm_dim0_0, ppm_dim0_1, ppm_dim1_0, ppm_dim1_1))
+
+        # Decorate
+        ax.set_ylabel("%s (ppm)"%udic[0]['label'])
+        ax.set_xlabel("%s (ppm)"%udic[1]['label'])
+        ax.set_title("Spectrum")
+        lim_dim1 = [ppm_dim1_0, ppm_dim1_1]
+        lim_dim0 = [ppm_dim0_0, ppm_dim0_1]
+        ax.set_ylim(max(lim_dim1), min(lim_dim1))
+        ax.set_xlim(max(lim_dim0), min(lim_dim0))
+
+    # If show.
+    if show:
+        plt.show()
+
+    # Return ax
+    return ax
+
+
 if __name__ == "__main__":
     # Check files are available.
     files = ['fid', 'fid.com', 'nmrproc.com', 'test.fid']
@@ -1082,11 +1148,18 @@ if __name__ == "__main__":
         res_dic[sf_dir]['ref']['udic'] = udic_ref
         res_dic[sf_dir]['ref']['data'] = data_ref
 
+        # Try a contour plot.
+        contour_plot(dic=dic_ref, udic=udic_ref, data=data_ref, contour_start=30000., contour_num=20, contour_factor=1.20, ppm=True, show=False)
+        png_path = startdir + os.sep + "spec_FT_ref.png"
+        plt.savefig(png_path, format='png', dpi=600)
+        # Close figure.
+        plt.close("all")
+
         # Make a histogram
         ax, amp, mu, sigma, xlim_ref, ylim_ref = hist_plot(ndarray=data_ref, show=False)
         res_dic[sf_dir]['ref']['hist'] = [amp, mu, sigma]
 
-        png_path = startdir + os.sep + "hist_%s_ref.png"%(sf_dir)
+        png_path = startdir + os.sep + "hist_FT_ref.png"
         plt.savefig(png_path, format='png', dpi=600)
         # Close figure.
         plt.close("all")
@@ -1298,6 +1371,25 @@ if __name__ == "__main__":
             res_dic[sf_dir][proc_dir]['dic'] = dic_cur
             res_dic[sf_dir][proc_dir]['udic'] = udic_cur
             res_dic[sf_dir][proc_dir]['data'] = data_cur
+
+            # Try a contour plot.
+            contour_plot(dic=dic_cur, udic=udic_cur, data=data_cur, contour_start=30000., contour_num=20, contour_factor=1.20, ppm=True, show=False)
+            png_path = startdir + os.sep + "spect_%s_%s.png"%(sf_dir, proc_dir)
+            plt.savefig(png_path, format='png', dpi=600)
+            # Close figure.
+            plt.close("all")
+
+            # Make a residual intensity spectrum.
+            data_resi = data_cur - data_ref_full
+            path_resi_spec = cur_proc_dir + os.sep + 'test_resi.ft2'
+            nmrglue.fileio.pipe.write(filename=path_resi_spec, dic=dic_cur, data=data_resi, overwrite=False)
+
+            # Try a contour plot.
+            contour_plot(dic=dic_cur, udic=udic_cur, data=data_resi, contour_start=10000., contour_num=20, contour_factor=1.20, ppm=True, show=False)
+            png_path = startdir + os.sep + "resi_spect_%s_%s.png"%(sf_dir, proc_dir)
+            plt.savefig(png_path, format='png', dpi=600)
+            # Close figure.
+            plt.close("all")
 
             # Make a histogram
             ax, amp, mu, sigma, xlim, ylim = hist_plot(ndarray=data_cur, show=False)
