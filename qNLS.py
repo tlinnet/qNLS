@@ -942,7 +942,7 @@ def write_data(out=None, headings=None, data=None, sep=None):
             out.write('\n')
 
 
-def contour_plot(dic=None, udic=None, data=None, contour_start=30000., contour_num=20, contour_factor=1.20, ppm=True, show=False):
+def contour_plot(dic=None, udic=None, data=None, contour_start=30000., contour_num=20, contour_factor=1.20, ppm=True, show=False, table=None):
     """Plot the spectrum as contour plot.
 
     @keyword dic:               The data dictionary, from nmrglue.
@@ -961,6 +961,8 @@ def contour_plot(dic=None, udic=None, data=None, contour_start=30000., contour_n
     @type ppm:                  bool
     @keyword show:              A flag which if True will make a call to matplotlib.pyplot.show().
     @type show:                 bool
+    @keyword table:             Peak table from nmrglue.analysis.peakpick.pick.
+    @type table:                recarray
     @return:                    The matplotlib.axes.AxesSubplot class, which can be manipulated to add additional text to the axis.
     @rtype:                     matplotlib.axes.AxesSubplot
     """
@@ -998,6 +1000,13 @@ def contour_plot(dic=None, udic=None, data=None, contour_start=30000., contour_n
         lim_dim0 = [ppm_dim0_0, ppm_dim0_1]
         ax.set_ylim(max(lim_dim1), min(lim_dim1))
         ax.set_xlim(max(lim_dim0), min(lim_dim0))
+
+        # If point table scale.
+        if table != None:
+            x_ppm = uc_dim0.unit(table['Y_AXIS'],"ppm")
+            y_ppm = uc_dim1.unit(table['X_AXIS'],"ppm")
+
+            ax.plot(x_ppm, y_ppm, 'rx')
 
     # If show.
     if show:
