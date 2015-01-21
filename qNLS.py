@@ -974,11 +974,20 @@ def contour_plot(dic=None, udic=None, data=None, contour_start=30000., contour_n
     """
 
     # Setup plot parameters
+    # http://www.physics.ox.ac.uk/Users/msshin/science/code/matplotlib_cm/
     # contour map (colors to use for contours)
-    cmap = matplotlib.cm.Blues_r
+    #cmap = matplotlib.cm.Blues_r
+    #cmap = matplotlib.cm.bwr
+    #cmap = matplotlib.cm.RdBu_r
+    #cmap = matplotlib.cm.coolwarm
+    #cmap = matplotlib.cm.brg
+    cmap = matplotlib.cm.seismic_r
 
     # Calculate contour levels
-    cl = contour_start * contour_factor ** numpy.arange(contour_num)
+    cl_pos = contour_start * contour_factor ** numpy.arange(contour_num)
+    cl_neg = - contour_start * contour_factor ** numpy.arange(contour_num)[::-1]
+
+    cl = numpy.concatenate((cl_neg, cl_pos))
 
     # Create the figure
     fig = plt.figure()
@@ -1013,7 +1022,7 @@ def contour_plot(dic=None, udic=None, data=None, contour_start=30000., contour_n
             x_ppm = uc_dim0.unit(table['Y_AXIS'],"ppm")
             y_ppm = uc_dim1.unit(table['X_AXIS'],"ppm")
 
-            ax.plot(x_ppm, y_ppm, 'rx')
+            ax.plot(x_ppm, y_ppm, 'gx', alpha=0.5)
 
     # If show.
     if show:
@@ -1165,7 +1174,7 @@ if __name__ == "__main__":
         res_dic[sf_dir]['ref']['data'] = data_ref
 
         # Try a contour plot.
-        contour_plot(dic=dic_ref, udic=udic_ref, data=data_ref, contour_start=20*rmsd, contour_num=20, contour_factor=1.20, ppm=True, show=False)
+        contour_plot(dic=dic_ref, udic=udic_ref, data=data_ref, contour_start=20*rmsd, contour_num=10, contour_factor=1.20, ppm=True, show=False)
         png_path = startdir + os.sep + "spec_FT_ref.png"
         plt.savefig(png_path, format='png', dpi=600)
         # Close figure.
@@ -1397,7 +1406,7 @@ if __name__ == "__main__":
             res_dic[sf_dir][proc_dir]['data'] = data_cur
 
             # Try a contour plot.
-            contour_plot(dic=dic_cur, udic=udic_cur, data=data_cur, contour_start=20*rmsd_FULL_ft2file, contour_num=20, contour_factor=1.20, ppm=True, show=False, table=table)
+            contour_plot(dic=dic_cur, udic=udic_cur, data=data_cur, contour_start=20*rmsd_FULL_ft2file, contour_num=10, contour_factor=1.20, ppm=True, show=False, table=table)
             png_path = startdir + os.sep + "spect_%s_%s.png"%(sf_dir, proc_dir)
             plt.savefig(png_path, format='png', dpi=600)
             # Close figure.
@@ -1409,7 +1418,7 @@ if __name__ == "__main__":
             nmrglue.fileio.pipe.write(filename=path_resi_spec, dic=dic_cur, data=data_resi, overwrite=True)
 
             # Try a contour plot.
-            contour_plot(dic=dic_cur, udic=udic_cur, data=data_resi, contour_start=6*rmsd_FULL_ft2file, contour_num=20, contour_factor=1.20, ppm=True, show=False, table=table)
+            contour_plot(dic=dic_cur, udic=udic_cur, data=data_resi, contour_start=6*rmsd_FULL_ft2file, contour_num=10, contour_factor=1.20, ppm=True, show=False, table=table)
             png_path = startdir + os.sep + "resi_spect_%s_%s.png"%(sf_dir, proc_dir)
             plt.savefig(png_path, format='png', dpi=600)
             # Close figure.
