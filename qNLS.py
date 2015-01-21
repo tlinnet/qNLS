@@ -348,11 +348,17 @@ def hist_plot(ndarray=None, hist_kwargs=None, show=False):
     sigma3_p = mu+3*sigma
     sigma3_m = mu-3*sigma
 
-    ax.annotate("Sigma 3 plus", xy=(sigma3_p, 0.0), xycoords='data', xytext=(sigma3_p, 0.1*amp), textcoords='data', size=8, horizontalalignment="center", arrowprops=dict(arrowstyle="->", connectionstyle="arc3, rad=0"), bbox=dict(boxstyle="round", facecolor="w"))
-    ax.annotate("Sigma 3 minus", xy=(sigma3_m, 0.0), xycoords='data', xytext=(sigma3_m, 0.1*amp), textcoords='data', size=8, horizontalalignment="center", arrowprops=dict(arrowstyle="->", connectionstyle="arc3, rad=0"), bbox=dict(boxstyle="round", facecolor="w"))
+    ax.annotate("Sigma 3 plus", xy=(sigma3_p, 0.0), xycoords='data', xytext=(sigma3_p, 0.2*amp), textcoords='data', size=8, horizontalalignment="center", arrowprops=dict(arrowstyle="->", connectionstyle="arc3, rad=0"), bbox=dict(boxstyle="round", facecolor="w"))
+    ax.annotate("Sigma 3 minus", xy=(sigma3_m, 0.0), xycoords='data', xytext=(sigma3_m, 0.2*amp), textcoords='data', size=8, horizontalalignment="center", arrowprops=dict(arrowstyle="->", connectionstyle="arc3, rad=0"), bbox=dict(boxstyle="round", facecolor="w"))
+
+    sigma6_p = mu+6*sigma
+    sigma6_m = mu-6*sigma
+
+    ax.annotate("Sigma 6 plus", xy=(sigma6_p, 0.0), xycoords='data', xytext=(sigma6_p, 0.1*amp), textcoords='data', size=8, horizontalalignment="center", arrowprops=dict(arrowstyle="->", connectionstyle="arc3, rad=0"), bbox=dict(boxstyle="round", facecolor="w"))
+    ax.annotate("Sigma 6 minus", xy=(sigma6_m, 0.0), xycoords='data', xytext=(sigma6_m, 0.1*amp), textcoords='data', size=8, horizontalalignment="center", arrowprops=dict(arrowstyle="->", connectionstyle="arc3, rad=0"), bbox=dict(boxstyle="round", facecolor="w"))
 
     # Set limits.
-    xlim = (mu-5*sigma, mu+25*sigma)
+    xlim = (mu-10*sigma, mu+25*sigma)
     ax.set_xlim(xlim)
     ylim = (0, bin_max_y)
     ax.set_ylim(ylim)
@@ -993,9 +999,10 @@ def contour_plot(dic=None, udic=None, data=None, contour_start=30000., contour_n
         ax.contour(data.T, cl, cmap=cmap, extent=(ppm_dim0_0, ppm_dim0_1, ppm_dim1_0, ppm_dim1_1))
 
         # Decorate
+        ax.set_title("Spectrum at contour %3.1f"%contour_start)
+
         ax.set_ylabel("%s (ppm)"%udic[0]['label'])
         ax.set_xlabel("%s (ppm)"%udic[1]['label'])
-        ax.set_title("Spectrum")
         lim_dim1 = [ppm_dim1_0, ppm_dim1_1]
         lim_dim0 = [ppm_dim0_0, ppm_dim0_1]
         ax.set_ylim(max(lim_dim1), min(lim_dim1))
@@ -1158,7 +1165,7 @@ if __name__ == "__main__":
         res_dic[sf_dir]['ref']['data'] = data_ref
 
         # Try a contour plot.
-        contour_plot(dic=dic_ref, udic=udic_ref, data=data_ref, contour_start=30000., contour_num=20, contour_factor=1.20, ppm=True, show=False)
+        contour_plot(dic=dic_ref, udic=udic_ref, data=data_ref, contour_start=20*rmsd, contour_num=20, contour_factor=1.20, ppm=True, show=False)
         png_path = startdir + os.sep + "spec_FT_ref.png"
         plt.savefig(png_path, format='png', dpi=600)
         # Close figure.
@@ -1362,6 +1369,14 @@ if __name__ == "__main__":
         dic_ref_full, udic_ref_full, data_ref_full = read_spectrum(file=path_ref_FULL_ft2file)
         a_dev, r_xy_dev = linear_corr(x=data_ref_flat, y=data_ref_full.flatten())
 
+        # Get the RMSD from showApod
+        returncode, line_split = call_prog(args=['showApod', path_ref_FULL_ft2file], verbose=False)
+        rmsd_FULL_ft2file = extract_rmsd(lines=line_split)
+
+        # Now do a peak list
+        table = nmrglue.analysis.peakpick.pick(data=data_ref, pthres=20*rmsd_FULL_ft2file, nthres=None, algorithm='connected', est_params=False, cluster=False, table=True)
+        #table = nmrglue.analysis.peakpick.pick(data=data_ref, pthres=20*rmsd_FULL_ft2file, nthres=None, algorithm='downward', est_params=False, cluster=False, table=True)
+
         # Then collect showApod rmsd
         # Get showApod
         for j, proc_dir in enumerate(all_proc_dirs):
@@ -1382,7 +1397,7 @@ if __name__ == "__main__":
             res_dic[sf_dir][proc_dir]['data'] = data_cur
 
             # Try a contour plot.
-            contour_plot(dic=dic_cur, udic=udic_cur, data=data_cur, contour_start=30000., contour_num=20, contour_factor=1.20, ppm=True, show=False)
+            contour_plot(dic=dic_cur, udic=udic_cur, data=data_cur, contour_start=20*rmsd_FULL_ft2file, contour_num=20, contour_factor=1.20, ppm=True, show=False, table=table)
             png_path = startdir + os.sep + "spect_%s_%s.png"%(sf_dir, proc_dir)
             plt.savefig(png_path, format='png', dpi=600)
             # Close figure.
@@ -1391,10 +1406,10 @@ if __name__ == "__main__":
             # Make a residual intensity spectrum.
             data_resi = data_cur - data_ref_full
             path_resi_spec = cur_proc_dir + os.sep + 'test_resi.ft2'
-            nmrglue.fileio.pipe.write(filename=path_resi_spec, dic=dic_cur, data=data_resi, overwrite=False)
+            nmrglue.fileio.pipe.write(filename=path_resi_spec, dic=dic_cur, data=data_resi, overwrite=True)
 
             # Try a contour plot.
-            contour_plot(dic=dic_cur, udic=udic_cur, data=data_resi, contour_start=10000., contour_num=20, contour_factor=1.20, ppm=True, show=False)
+            contour_plot(dic=dic_cur, udic=udic_cur, data=data_resi, contour_start=6*rmsd_FULL_ft2file, contour_num=20, contour_factor=1.20, ppm=True, show=False, table=table)
             png_path = startdir + os.sep + "resi_spect_%s_%s.png"%(sf_dir, proc_dir)
             plt.savefig(png_path, format='png', dpi=600)
             # Close figure.
@@ -1528,7 +1543,8 @@ if __name__ == "__main__":
             res_dic[sf_dir][proc_dir]['residual_hist'] = [amp, mu, sigma]
 
             # Set same limits as ref
-            ax.set_xlim(mu-6*sigma, mu+6*sigma)
+            #ax.set_xlim(mu-6*sigma, mu+6*sigma)
+            ax.set_xlim(-10*rmsd_FULL_ft2file, +10*rmsd_FULL_ft2file)
             #ax.set_ylim(ylim_ref)
 
             png_path = startdir + os.sep + "residual_hist_%s_%s.png"%(sf_dir, proc_dir)
