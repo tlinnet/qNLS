@@ -48,7 +48,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-N', nargs='?', type=int, metavar='N', dest='N', default=1, help='Number of repeated spectra. -N 1')
 #parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[60, 56, 52, 48, 44, 40, 36, 32, 28, 24, 20, 16, 12, 8], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
-parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[40, 28, 16, 12, 8], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
+#parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[40, 28, 16, 12, 8], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
+parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[80, 78, 76, 74, 72, 70, 68, 66, 64, 62, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36, 34, 32, 30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
 parser.add_argument('-T2', nargs='?', type=float, metavar='T2', dest='T2', default=0.1, help='T2: spin-spin relaxation time, the expected time constant characterizing the signal decay in in-direct dimension (s): -T2 0.1.')
 parser.add_argument('-FST_PNT_PPM', nargs='?', type=float, metavar='FST_PNT_PPM', dest='FST_PNT_PPM', default=11, help='MDD param: Define from where the region of interest starts in the direct dimension [ppm]: -FST_PNT_PPM 11')
 parser.add_argument('-ROISW', nargs='?', type=float, metavar='ROISW', dest='ROISW', default=5, help='MDD param: Define sweep-width in ppm, to subtract from FST_PNT_PPM: -ROISW 5')
@@ -1173,8 +1174,12 @@ if __name__ == "__main__":
         res_dic[sf_dir]['ref']['udic'] = udic_ref
         res_dic[sf_dir]['ref']['data'] = data_ref
 
+        # Now do a peak list
+        table = nmrglue.analysis.peakpick.pick(data=data_ref, pthres=20*rmsd, nthres=None, algorithm='connected', est_params=False, cluster=False, table=True)
+        #table = nmrglue.analysis.peakpick.pick(data=data_ref, pthres=20*rmsd, nthres=None, algorithm='downward', est_params=False, cluster=False, table=True)
+
         # Try a contour plot.
-        contour_plot(dic=dic_ref, udic=udic_ref, data=data_ref, contour_start=20*rmsd, contour_num=10, contour_factor=1.20, ppm=True, show=False)
+        contour_plot(dic=dic_ref, udic=udic_ref, data=data_ref, contour_start=20*rmsd, contour_num=10, contour_factor=1.20, ppm=True, show=False, table=table)
         png_path = startdir + os.sep + "spec_FT_ref.png"
         plt.savefig(png_path, format='png', dpi=600)
         # Close figure.
@@ -1381,10 +1386,6 @@ if __name__ == "__main__":
         # Get the RMSD from showApod
         returncode, line_split = call_prog(args=['showApod', path_ref_FULL_ft2file], verbose=False)
         rmsd_FULL_ft2file = extract_rmsd(lines=line_split)
-
-        # Now do a peak list
-        table = nmrglue.analysis.peakpick.pick(data=data_ref, pthres=20*rmsd_FULL_ft2file, nthres=None, algorithm='connected', est_params=False, cluster=False, table=True)
-        #table = nmrglue.analysis.peakpick.pick(data=data_ref, pthres=20*rmsd_FULL_ft2file, nthres=None, algorithm='downward', est_params=False, cluster=False, table=True)
 
         # Then collect showApod rmsd
         # Get showApod
