@@ -1033,6 +1033,37 @@ def contour_plot(dic=None, udic=None, data=None, contour_start=30000., contour_n
     return ax
 
 
+def write_peak_list(filename=None, x_axis_pts=None, y_axis_pts=None, x_axis_ppm=None, y_axis_ppm=None, int_ref=None, list_int_cov=None):
+
+    # Define headings
+    filew = open(filename, "w")
+
+    filew.write("VARS INDEX X_AXIS Y_AXIS X_PPM Y_PPM X1 X3 Y1 Y3 HEIGHT"+'\n')
+    filew.write(r"FORMAT %5d %9.3f %9.3f %8.3f %8.3f %4d %4d %4d %4d %+e"+'\n')
+
+    for i in range(len(x_axis_pts)):
+        index = "%i" % i
+        x_pts = "%i"% int(x_axis_pts[i])
+        y_pts = "%i"% int(y_axis_pts[i])
+        x_ppm = "%3.3f"% x_axis_ppm[i]
+        y_ppm = "%3.3f"% y_axis_ppm[i]
+        height = "%1.5e"% int_ref[i]
+
+        string = "%3s %4s %4s %6s %6s %4s %4s %4s %4s %8s" % (index, x_pts, y_pts, x_ppm, y_ppm, x_pts, x_pts, y_pts, y_pts, height)
+
+        if list_int_cov != None:
+            for int_cov in list_int_cov:
+                height_cov = int_cov[i]
+                int_prop = height_cov / int_ref[i]
+                int_prop_s = "%1.5f" % int_prop
+                string += " %8s" % int_prop_s
+
+        filew.write(string + "\n")
+
+    # Close file.
+    filew.close()
+
+
 if __name__ == "__main__":
     # Check files are available.
     files = ['fid', 'fid.com', 'nmrproc.com', 'test.fid']
@@ -1177,6 +1208,12 @@ if __name__ == "__main__":
         # Now do a peak list
         table = nmrglue.analysis.peakpick.pick(data=data_ref, pthres=20*rmsd, nthres=None, algorithm='connected', est_params=False, cluster=False, table=True)
         #table = nmrglue.analysis.peakpick.pick(data=data_ref, pthres=20*rmsd, nthres=None, algorithm='downward', est_params=False, cluster=False, table=True)
+
+        # Now convert points to ppm.
+        uc_dim0 = nmrglue.pipe.make_uc(dic_ref, data_ref, dim=0)
+        uc_dim1 = nmrglue.pipe.make_uc(dic_ref, data_ref, dim=1)
+        y_axisppm = uc_dim0.unit(table['Y_AXIS'], "ppm")
+        x_axisppm = uc_dim1.unit(table['X_AXIS'], "ppm")
 
         # Try a contour plot.
         contour_plot(dic=dic_ref, udic=udic_ref, data=data_ref, contour_start=20*rmsd, contour_num=10, contour_factor=1.20, ppm=True, show=False, table=table)
@@ -1387,6 +1424,12 @@ if __name__ == "__main__":
         returncode, line_split = call_prog(args=['showApod', path_ref_FULL_ft2file], verbose=False)
         rmsd_FULL_ft2file = extract_rmsd(lines=line_split)
 
+        # Measure the intensity
+        data_ref_full_int = data_ref_full[table['Y_AXIS'].astype(int), table['X_AXIS'].astype(int)]
+
+        # Collect proc ints
+        proc_ints = []
+
         # Then collect showApod rmsd
         # Get showApod
         for j, proc_dir in enumerate(all_proc_dirs):
@@ -1405,6 +1448,10 @@ if __name__ == "__main__":
             res_dic[sf_dir][proc_dir]['dic'] = dic_cur
             res_dic[sf_dir][proc_dir]['udic'] = udic_cur
             res_dic[sf_dir][proc_dir]['data'] = data_cur
+
+            # Measure the intensity of peaks.
+            data_cur_int = data_cur[table['Y_AXIS'].astype(int), table['X_AXIS'].astype(int)]
+            proc_ints.append(data_cur_int)
 
             # Try a contour plot.
             contour_plot(dic=dic_cur, udic=udic_cur, data=data_cur, contour_start=20*rmsd_FULL_ft2file, contour_num=10, contour_factor=1.20, ppm=True, show=False, table=table)
@@ -1485,6 +1532,10 @@ if __name__ == "__main__":
             # Close figure.
             plt.close("all")
             print("Made figure: %s"%png_path)
+
+        # Write intensities
+        peaks_results_name = startdir + os.sep + "peaks_%s_results.tab"%(sf_dir)
+        write_peak_list(filename=peaks_results_name, x_axis_pts=table['X_AXIS'], y_axis_pts=table['Y_AXIS'], x_axis_ppm=x_axisppm, y_axis_ppm=y_axisppm, int_ref=data_ref_full_int, list_int_cov=proc_ints)
 
         # Now make report for Hist
         hist_results_name = startdir + os.sep + "hist_%s_results.txt"%(sf_dir)
