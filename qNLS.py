@@ -59,7 +59,7 @@ parser.add_argument('-MDDTHREADS', nargs='?', type=int, metavar='MDDTHREADS', de
 parser.add_argument('-NCOMP', nargs='?', type=int, metavar='NCOMP', dest='NCOMP', default=25, help='MDD param: Number of components per sub-region: -NCOMP 25')
 parser.add_argument('-NITER', nargs='?', type=int, metavar='NITER', dest='NITER', default=50, help='MDD param: number of iteration in mddnmr: -NITER 50')
 parser.add_argument('-MDD_NOISE', nargs='?', type=float, metavar='MDD_NOISE', dest='MDD_NOISE', default=0.7, help='MDD param: Noise in mddnmr: -MDD_NOISE 0.7')
-parser.add_argument('-N_NUS_SCHEDULES', nargs='?', type=int, metavar='N_NUS_SCHEDULES', dest='N_NUS_SCHEDULES', default=1000, help='dpoisson7.1 param: Number of NUS scedules to produce for scoring: -N_NUS_SCHEDULES 1000')
+parser.add_argument('-N_NUS_SCHEDULES', nargs='?', type=int, metavar='N_NUS_SCHEDULES', dest='N_NUS_SCHEDULES', default=5000, help='dpoisson7.1 param: Number of NUS scedules to produce for scoring: -N_NUS_SCHEDULES 1000')
 input_args = parser.parse_args()
 
 def call_prog(args=None, verbose=True):
