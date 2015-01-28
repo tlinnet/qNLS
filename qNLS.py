@@ -59,6 +59,7 @@ parser.add_argument('-MDDTHREADS', nargs='?', type=int, metavar='MDDTHREADS', de
 parser.add_argument('-NCOMP', nargs='?', type=int, metavar='NCOMP', dest='NCOMP', default=25, help='MDD param: Number of components per sub-region: -NCOMP 25')
 parser.add_argument('-NITER', nargs='?', type=int, metavar='NITER', dest='NITER', default=50, help='MDD param: number of iteration in mddnmr: -NITER 50')
 parser.add_argument('-MDD_NOISE', nargs='?', type=float, metavar='MDD_NOISE', dest='MDD_NOISE', default=0.7, help='MDD param: Noise in mddnmr: -MDD_NOISE 0.7')
+parser.add_argument('-N_NUS_SCHEDULES', nargs='?', type=int, metavar='N_NUS_SCHEDULES', dest='N_NUS_SCHEDULES', default=10, help='dpoisson7.1 param: Number of NUS scedules to produce for scoring: -N_NUS_SCHEDULES 1000')
 input_args = parser.parse_args()
 
 def call_prog(args=None, verbose=True):
@@ -311,7 +312,7 @@ def hist_plot(ndarray=None, hist_kwargs=None, show=False):
     if pcov is None:
         # indeterminate covariance
         pcov = numpy.zeros((len(popt), len(popt)), dtype=float)
-        pcov.fill(inf)
+        pcov.fill(numpy.inf)
     elif not absolute_sigma:
         if N > p:
             pcov = pcov * chi2_red
@@ -1118,11 +1119,27 @@ if __name__ == "__main__":
     # Get the number of points in the direct dimension
     np = udic[1]['size']*2
 
-    # Get the sw in the in-direct dimension
+    # Get the number of real + imaginary reconstructed points. 
+    td1 = udic[0]['size']
+
+    # Get the number of increments pairs in the in-direct dimension.
+    ni = td1 / 2
+
+    # Calculate R2
+    R2 = 1.0 / input_args.T2
+
+    # Get the obsfreq1 in MHz.
+    obsfreq1 = udic[0]['obs']
+
+    # Get the sw in the in-direct dimension, in Hz
     sw = udic[0]['sw']
 
-    # Get the number of increments in the in-direct dimension.
-    ni = udic[0]['size'] / 2
+    # Calculate the sw in ppm.
+    sw_ppm = sw / obsfreq1
+
+    # Get path to dpoisson7.1.1. NUSScore script from Peter E. Wright.
+    path_dpoisson = os.path.dirname(os.path.realpath(__file__))+os.sep+"Aoto_Fenwick_Kroon_Wright_2014_NUSScore_linux_32bit-release"+os.sep+"dpoisson7.1.1"
+
     test = ni < 400
     if not test:
         print("\nNumber of increments in the in-direct dimension is to high: %i\n"%ni)
@@ -1170,6 +1187,37 @@ if __name__ == "__main__":
         res_dic[sf_dir] = {}
         res_dic[sf_dir]['cur_ni'] = cur_ni
 
+        # Create dir for dpoisson
+        out_dpoisson = startdir + os.sep + 'NUSScore' + os.sep + sf_dir
+        if not os.path.exists(out_dpoisson):
+            os.makedirs(out_dpoisson)
+
+        # Calculate the current coverage
+        cur_cov = float(cur_ni)/float(ni)
+
+        # Create range of  schdedules with dpoisson
+        print("Creating %i NUSScedules with dpoisson7.1.1"%input_args.N_NUS_SCHEDULES)
+        poisson_args = ["%1.7f"%cur_cov, "%i"%td1, "1", "%2.1f"%R2, "1", "0", "0", "%2.3f"%obsfreq1, "1", "%2.2f"%sw_ppm, "1", "0", "%i"%input_args.N_NUS_SCHEDULES, "1", "%s"%out_dpoisson]
+        print("Created with args:", poisson_args)
+        returncode, line_split = call_prog(args=[path_dpoisson] + poisson_args, verbose=True)
+
+        # Now get the filename for the best schedule.
+        fname_nus_top_out = out_dpoisson + os.sep + "score" + os.sep + "nus_top.out"
+
+        # Open the file.
+        file_nus_top_out = open(fname_nus_top_out, "r")
+        lines_nus_top_out = file_nus_top_out.readlines()
+
+        # Close the file.
+        file_nus_top_out.close()
+
+        # Get filename for best nus schedule
+        fname_best_nus = out_dpoisson + os.sep + "lists" + os.sep + lines_nus_top_out[3].split()[0]
+        #file_best_nus = open(fname_best_nus, "r")
+        #lines_best_nus = file_best_nus.readlines()
+        #print(lines_best_nus)
+
+        # Create dir for restoring.
         create_sf_dir = startdir + os.sep + sf_dir
         if not os.path.exists(create_sf_dir):
             os.makedirs(create_sf_dir)
