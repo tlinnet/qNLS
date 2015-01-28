@@ -25,9 +25,8 @@ plt.close("all")
 #plt.show()
 
 dic_resi, udic_resi, data_resi = qNLS.read_spectrum(file='test_resi.ft2')
-int_arr_resi = data_resi[table['Y_AXIS'].astype(int), table['X_AXIS'].astype(int)]
 
+int_arr_resi = data_resi[table['Y_AXIS'].astype(int), table['X_AXIS'].astype(int)] + int_arr
 
-int_arr_resi = data_resi[table['Y_AXIS'].astype(int), table['X_AXIS'].astype(int)]
-qNLS.write_peak_list(filename="test.tab", x_axis_pts=table['X_AXIS'], y_axis_pts=table['Y_AXIS'], x_axis_ppm=x_axisppm, y_axis_ppm=y_axisppm, int_ref=int_arr, list_int_cov=[int_arr])
+qNLS.write_peak_list(filename="test.tab", x_axis_pts=table['X_AXIS'], y_axis_pts=table['Y_AXIS'], x_axis_ppm=x_axisppm, y_axis_ppm=y_axisppm, int_ref=int_arr, list_int_cov=[int_arr, int_arr_resi])
 
