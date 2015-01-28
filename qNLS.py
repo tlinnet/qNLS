@@ -1033,13 +1033,20 @@ def contour_plot(dic=None, udic=None, data=None, contour_start=30000., contour_n
     return ax
 
 
-def write_peak_list(filename=None, x_axis_pts=None, y_axis_pts=None, x_axis_ppm=None, y_axis_ppm=None, int_ref=None, list_int_cov=None):
+def write_peak_list(filename=None, x_axis_pts=None, y_axis_pts=None, x_axis_ppm=None, y_axis_ppm=None, int_ref=None, list_int_cov=None, pct_change=2.):
 
     # Define headings
     filew = open(filename, "w")
 
     filew.write("VARS INDEX X_AXIS Y_AXIS X_PPM Y_PPM X1 X3 Y1 Y3 HEIGHT"+'\n')
     filew.write(r"FORMAT %5d %9.3f %9.3f %8.3f %8.3f %4d %4d %4d %4d %+e"+'\n')
+
+    # Define proportion change
+    prop_ch_p = 1.0 + pct_change / 100.
+    prop_ch_m = 1.0 - pct_change / 100.
+
+    # Find number of peaks
+    n_peaks = len(int_ref)
 
     for i in range(len(x_axis_pts)):
         index = "%i" % i
@@ -1056,7 +1063,27 @@ def write_peak_list(filename=None, x_axis_pts=None, y_axis_pts=None, x_axis_ppm=
                 height_cov = int_cov[i]
                 int_prop = height_cov / int_ref[i]
                 int_prop_s = "%1.5f" % int_prop
-                string += " %8s" % int_prop_s
+
+
+                # Test for pct change per peak
+                if int_prop > prop_ch_p or int_prop < prop_ch_m:
+                    mark = "x"
+                else:
+                    mark = " "
+
+                # Count all changes
+                int_prop_array = int_cov/int_ref
+                mask_pct_change = masked_where( numpy.logical_or( int_prop_array < prop_ch_m, prop_ch_p < int_prop_array) , int_prop_array)
+                peaks_change = int_prop_array[mask_pct_change.mask]
+
+                if type(peaks_change) != numpy.ndarray:
+                    n_peaks_change = 0
+                else:
+                    n_peaks_change = len(peaks_change)
+
+                pct_peaks_change = float(n_peaks_change) / float(n_peaks) * 100.
+
+                string += "| %8s %s %2.1f%%" % (int_prop_s, mark, pct_peaks_change)
 
         filew.write(string + "\n")
 
