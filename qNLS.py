@@ -1084,7 +1084,11 @@ def write_peak_list(filename=None, x_axis_pts=None, y_axis_pts=None, x_axis_ppm=
 
                 pct_peaks_change = float(n_peaks_change) / float(n_peaks) * 100.
 
-                string += "| %8s %s %2.1f%%" % (int_prop_s, mark, pct_peaks_change)
+                # Make rmsd of relative change
+                deviation = int_ref/int_ref - int_prop_array
+                rmsd = numpy.sqrt(numpy.mean(numpy.square(deviation)))
+
+                string += "| %8s %s %2.1f%% %1.7f" % (int_prop_s, mark, pct_peaks_change, rmsd)
 
         filew.write(string + "\n")
 
