@@ -310,7 +310,7 @@ def hist_plot(ndarray=None, hist_kwargs=None, show=False):
 
     if pcov is None:
         # indeterminate covariance
-        pcov = zeros((len(popt), len(popt)), dtype=float)
+        pcov = numpy.zeros((len(popt), len(popt)), dtype=float)
         pcov.fill(inf)
     elif not absolute_sigma:
         if N > p:
