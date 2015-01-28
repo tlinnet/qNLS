@@ -59,7 +59,7 @@ parser.add_argument('-MDDTHREADS', nargs='?', type=int, metavar='MDDTHREADS', de
 parser.add_argument('-NCOMP', nargs='?', type=int, metavar='NCOMP', dest='NCOMP', default=25, help='MDD param: Number of components per sub-region: -NCOMP 25')
 parser.add_argument('-NITER', nargs='?', type=int, metavar='NITER', dest='NITER', default=50, help='MDD param: number of iteration in mddnmr: -NITER 50')
 parser.add_argument('-MDD_NOISE', nargs='?', type=float, metavar='MDD_NOISE', dest='MDD_NOISE', default=0.7, help='MDD param: Noise in mddnmr: -MDD_NOISE 0.7')
-parser.add_argument('-N_NUS_SCHEDULES', nargs='?', type=int, metavar='N_NUS_SCHEDULES', dest='N_NUS_SCHEDULES', default=10, help='dpoisson7.1 param: Number of NUS scedules to produce for scoring: -N_NUS_SCHEDULES 1000')
+parser.add_argument('-N_NUS_SCHEDULES', nargs='?', type=int, metavar='N_NUS_SCHEDULES', dest='N_NUS_SCHEDULES', default=1000, help='dpoisson7.1 param: Number of NUS scedules to produce for scoring: -N_NUS_SCHEDULES 1000')
 input_args = parser.parse_args()
 
 def call_prog(args=None, verbose=True):
@@ -1162,8 +1162,9 @@ if __name__ == "__main__":
         sf_dirs.append(cur_dir)
 
     # Make list of ni and proc directories to create.
-    ni_dirs = []
-    proc_dirs = []
+    # The first one is with poisson
+    ni_dirs = ["0_test_poisson.fid"]
+    proc_dirs = ["0_test_poisson.proc"]
 
     for j in range(1, input_args.N + 1):
         cur_dir = '%02d.fid'%j
@@ -1363,6 +1364,10 @@ if __name__ == "__main__":
                 os.makedirs(create_ni_dir)
             # Make for ni.
             write_nls_in(dir=create_ni_dir, NI=cur_ni, NIMAX=ni, CEXP=input_args.CEXP, T2=input_args.T2, SW=sw)
+
+            # If poisson dir, replace the nls.hdr_3 file with best scored NUSSchedule.
+            if ni_dir == "0_test_poisson.fid":
+                shutil.copy(fname_best_nus, create_ni_dir + os.sep + 'nls.hdr_3')
 
             # Then create the ni shuffled binary data
             make_nus_data(dir_from=cwd, dir_to=create_ni_dir, np=np, ni=ni)
