@@ -47,7 +47,8 @@ start_time = time.time()
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-N', nargs='?', type=int, metavar='N', dest='N', default=4, help='Number of repeated spectra. -N 1')
-parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[90, 80, 70, 60, 50, 40, 30, 20, 10], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
+#parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[90, 80, 70, 60, 50, 40, 30, 20, 10], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
+parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[50, 40, 30, 20, 10], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
 #parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[60, 56, 52, 48, 44, 40, 36, 32, 28, 24, 20, 16, 12, 8], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
 #parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[40, 28, 16, 12, 8], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
 parser.add_argument('-T2', nargs='?', type=float, metavar='T2', dest='T2', default=0.1, help='T2: spin-spin relaxation time, the expected time constant characterizing the signal decay in in-direct dimension (s): -T2 0.1.')
@@ -1034,7 +1035,7 @@ def contour_plot(dic=None, udic=None, data=None, contour_start=30000., contour_n
     return ax
 
 
-def write_peak_list(filename=None, x_axis_pts=None, y_axis_pts=None, x_axis_ppm=None, y_axis_ppm=None, int_ref=None, list_int_cov=None, pct_change=2.):
+def write_peak_list(filename=None, x_axis_pts=None, y_axis_pts=None, x_axis_ppm=None, y_axis_ppm=None, int_ref=None, list_int_cov=None, pct_change=3.):
 
     # Define headings
     filew = open(filename, "w")
@@ -1202,7 +1203,9 @@ if __name__ == "__main__":
 
         # Create range of  schdedules with dpoisson
         print("Creating %i NUSScedules with dpoisson7.1.1"%input_args.N_NUS_SCHEDULES)
-        poisson_args = ["%1.7f"%cur_cov, "%i"%td1, "1", "%2.1f"%R2, "1", "0", "0", "%2.3f"%obsfreq1, "1", "%2.2f"%sw_ppm, "1", "0", "%i"%input_args.N_NUS_SCHEDULES, "1", "%s"%out_dpoisson]
+        # Constant time: 1/0 for yes/no
+        constant_time = 0
+        poisson_args = ["%1.7f"%cur_cov, "%i"%td1, "1", "%2.1f"%R2, "1", "%i"%constant_time, "0", "%2.3f"%obsfreq1, "1", "%2.2f"%sw_ppm, "1", "0", "%i"%input_args.N_NUS_SCHEDULES, "1", "%s"%out_dpoisson]
         print("Created with args:", poisson_args)
         returncode, line_split = call_prog(args=[path_dpoisson] + poisson_args, verbose=True)
 
