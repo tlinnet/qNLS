@@ -47,20 +47,18 @@ start_time = time.time()
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-N', nargs='?', type=int, metavar='N', dest='N', default=4, help='Number of repeated spectra. -N 1')
-parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[90, 80, 70, 60, 50, 40, 30, 20, 10], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
-#parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[50, 40, 30, 20, 10], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
-#parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[60, 56, 52, 48, 44, 40, 36, 32, 28, 24, 20, 16, 12, 8], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
-#parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[40, 28, 16, 12, 8], help='list of sampling fractions in percent: -sf 24 20 16 12 8')
+parser.add_argument('-sf', nargs='+', type=int, metavar='sf', dest='sf', default=[80, 60, 40, 20], help='list of sampling fractions in percent: -sf 80 60 40 20')
+parser.add_argument("-ref_FT", dest='ref_FT', action="store_true", help="Instead of using METHOD=coMDD at 100pct as reference for comparing, use METHOD=FT. Default False.")
+parser.add_argument('-N_NUS_SCHEDULES', nargs='?', type=int, metavar='N_NUS_SCHEDULES', dest='N_NUS_SCHEDULES', default=5000, help='dpoisson7.1 param: Number of NUS scedules to produce for scoring: -N_NUS_SCHEDULES 1000')
 parser.add_argument('-T2', nargs='?', type=float, metavar='T2', dest='T2', default=0.1, help='T2: spin-spin relaxation time, the expected time constant characterizing the signal decay in in-direct dimension (s): -T2 0.1.')
 parser.add_argument('-FST_PNT_PPM', nargs='?', type=float, metavar='FST_PNT_PPM', dest='FST_PNT_PPM', default=11, help='MDD param: Define from where the region of interest starts in the direct dimension [ppm]: -FST_PNT_PPM 11')
 parser.add_argument('-ROISW', nargs='?', type=float, metavar='ROISW', dest='ROISW', default=5, help='MDD param: Define sweep-width in ppm, to subtract from FST_PNT_PPM: -ROISW 5')
 parser.add_argument('-SRSIZE', nargs='?', type=float, metavar='SRSIZE', dest='SRSIZE', default=0.1, help='MDD param: Size of sub-region (ppm): -SRSIZE 0.1')
 parser.add_argument('-CEXP', nargs='?', type=str, metavar='CEXP', dest='CEXP', default='yn', help='Toggle R-MDD / MDD mode. For a dimension, with "y" time domain shape in the dimension is expected to be autoregressive. In other words, we assume that the FID in the dimension is a complex exponent. CEXP=y may be used, for example, for HNCO and HNcoCA experiments, but not for the NOESYs: -CEXP yn')
-parser.add_argument('-MDDTHREADS', nargs='?', type=int, metavar='MDDTHREADS', dest='MDDTHREADS', default=16, help='MDD param: Maximal number of parallel processes: -MDDTHREADS 16')
 parser.add_argument('-NCOMP', nargs='?', type=int, metavar='NCOMP', dest='NCOMP', default=25, help='MDD param: Number of components per sub-region: -NCOMP 25')
 parser.add_argument('-NITER', nargs='?', type=int, metavar='NITER', dest='NITER', default=50, help='MDD param: number of iteration in mddnmr: -NITER 50')
 parser.add_argument('-MDD_NOISE', nargs='?', type=float, metavar='MDD_NOISE', dest='MDD_NOISE', default=0.7, help='MDD param: Noise in mddnmr: -MDD_NOISE 0.7')
-parser.add_argument('-N_NUS_SCHEDULES', nargs='?', type=int, metavar='N_NUS_SCHEDULES', dest='N_NUS_SCHEDULES', default=5000, help='dpoisson7.1 param: Number of NUS scedules to produce for scoring: -N_NUS_SCHEDULES 1000')
+parser.add_argument('-MDDTHREADS', nargs='?', type=int, metavar='MDDTHREADS', dest='MDDTHREADS', default=16, help='MDD param: Maximal number of parallel processes: -MDDTHREADS 16')
 input_args = parser.parse_args()
 
 def call_prog(args=None, verbose=True):
@@ -790,7 +788,7 @@ def write_proc(dir=None, FID=None, NUS_POINTS=None, FST_PNT_PPM=None, ROISW=None
     "setenv selection_file nls.hdr_3",
     "setenv FST_PNT_PPM %s"%FST_PNT_PPM,
     "setenv ROISW %s"%ROISW,
-    "setenv proc_out test_FT.ft2",
+    "setenv proc_out test_REF_FT.ft2",
     "setenv NUS_POINTS           %i"%NUS_POINTS,
     "setenv NUS_TABLE_OFFSET     0",
     "setenv MDDTHREADS           %i"%MDDTHREADS,
@@ -1201,16 +1199,19 @@ if __name__ == "__main__":
         # Calculate the current coverage
         cur_cov = float(cur_ni)/float(ni)
 
-        # Create range of  schdedules with dpoisson
-        print("Creating %i NUSScedules with dpoisson7.1.1"%input_args.N_NUS_SCHEDULES)
-        # Constant time: 1/0 for yes/no
-        constant_time = 0
-        poisson_args = ["%1.7f"%cur_cov, "%i"%td1, "1", "%2.1f"%R2, "1", "%i"%constant_time, "0", "%2.3f"%obsfreq1, "1", "%2.2f"%sw_ppm, "1", "0", "%i"%input_args.N_NUS_SCHEDULES, "1", "%s"%out_dpoisson]
-        print("Created with args:", poisson_args)
-        returncode, line_split = call_prog(args=[path_dpoisson] + poisson_args, verbose=True)
-
-        # Now get the filename for the best schedule.
+        # The filename for the best schedule.
         fname_nus_top_out = out_dpoisson + os.sep + "score" + os.sep + "nus_top.out"
+
+        if not os.path.exists(fname_nus_top_out):
+            # Create range of  schdedules with dpoisson
+            print("\nCreating %i NUSScedules with dpoisson7.1.1"%input_args.N_NUS_SCHEDULES)
+            # Constant time: 1/0 for yes/no
+            constant_time = 0
+            poisson_args = ["%1.7f"%cur_cov, "%i"%td1, "1", "%2.1f"%R2, "1", "%i"%constant_time, "0", "%2.3f"%obsfreq1, "1", "%2.2f"%sw_ppm, "1", "0", "%i"%input_args.N_NUS_SCHEDULES, "1", "%s"%out_dpoisson]
+            print("Created with args:", poisson_args)
+            returncode, line_split = call_prog(args=[path_dpoisson] + poisson_args, verbose=True)
+        else:
+            print("\nNUSScedules with dpoisson7.1.1 already exists. Using these.\n")
 
         # Open the file.
         file_nus_top_out = open(fname_nus_top_out, "r")
@@ -1221,9 +1222,6 @@ if __name__ == "__main__":
 
         # Get filename for best nus schedule
         fname_best_nus = out_dpoisson + os.sep + "lists" + os.sep + lines_nus_top_out[3].split()[0]
-        #file_best_nus = open(fname_best_nus, "r")
-        #lines_best_nus = file_best_nus.readlines()
-        #print(lines_best_nus)
 
         # Create dir for restoring.
         create_sf_dir = startdir + os.sep + sf_dir
@@ -1266,103 +1264,7 @@ if __name__ == "__main__":
             # Change back again
             os.chdir(cwd)
 
-        # Producefile for reference.
-        path_ref_REF_ft2file = create_proc_ref_dir + os.sep + 'test_FT.ft2'
-        if not os.path.exists(path_ref_REF_ft2file):
-            # Change current directory
-            os.chdir(create_proc_ref_dir)
-            # Call script to create files.
-            call_prog(args=['proc_FT.sh'])
-            # Change back again
-            os.chdir(cwd)
-
-        # Now read data for reference
-        returncode, line_split = call_prog(args=['showApod', path_ref_REF_ft2file], verbose=False)
-        rmsd = extract_rmsd(lines=line_split)
-        res_dic[sf_dir]['ref'] = {}
-        res_dic[sf_dir]['ref']['rmsd'] = rmsd
-
-        # With nmrglue, read the fourier transformed spectrum to get information.
-        dic_ref, udic_ref, data_ref = read_spectrum(file=path_ref_REF_ft2file)
-        res_dic[sf_dir]['ref']['dic'] = dic_ref
-        res_dic[sf_dir]['ref']['udic'] = udic_ref
-        res_dic[sf_dir]['ref']['data'] = data_ref
-
-        # Now do a peak list
-        table = nmrglue.analysis.peakpick.pick(data=data_ref, pthres=20*rmsd, nthres=None, algorithm='connected', est_params=False, cluster=False, table=True)
-        #table = nmrglue.analysis.peakpick.pick(data=data_ref, pthres=20*rmsd, nthres=None, algorithm='downward', est_params=False, cluster=False, table=True)
-
-        # Now convert points to ppm.
-        uc_dim0 = nmrglue.pipe.make_uc(dic_ref, data_ref, dim=0)
-        uc_dim1 = nmrglue.pipe.make_uc(dic_ref, data_ref, dim=1)
-        y_axisppm = uc_dim0.unit(table['Y_AXIS'], "ppm")
-        x_axisppm = uc_dim1.unit(table['X_AXIS'], "ppm")
-
-        # Try a contour plot.
-        contour_plot(dic=dic_ref, udic=udic_ref, data=data_ref, contour_start=20*rmsd, contour_num=10, contour_factor=1.20, ppm=True, show=False, table=table)
-        png_path = startdir + os.sep + "spec_FT_ref.png"
-        plt.savefig(png_path, format='png', dpi=600)
-        # Close figure.
-        plt.close("all")
-
-        # Make a histogram
-        ax, amp, mu, sigma, xlim_ref, ylim_ref = hist_plot(ndarray=data_ref, show=False)
-        res_dic[sf_dir]['ref']['hist'] = [amp, mu, sigma]
-
-        png_path = startdir + os.sep + "hist_FT_ref.png"
-        plt.savefig(png_path, format='png', dpi=600)
-        # Close figure.
-        plt.close("all")
-
-        # Flatten data
-        data_ref_flat = data_ref.flatten()
-
-        # Make selection masks
-        sigma3 = mu + 3*sigma
-        sigma10 = mu + 10*sigma
-        sigma100 = mu + 100*sigma
-        sigma1000 = mu + 1000*sigma
-
-        mask_to_sigma3 = masked_where(data_ref_flat < sigma3, data_ref_flat)
-        mask_3_to_10 = masked_where( numpy.logical_and( sigma3 <= data_ref_flat, data_ref_flat < sigma10) , data_ref_flat)
-        mask_10_to_100 = masked_where( numpy.logical_and( sigma10 <= data_ref_flat, data_ref_flat < sigma100) , data_ref_flat)
-        mask_100_to_1000 = masked_where( numpy.logical_and( sigma100 <= data_ref_flat, data_ref_flat < sigma1000 ) , data_ref_flat)
-        mask_from_1000 = masked_where( sigma1000 <= data_ref_flat, data_ref_flat)
-
-        ## Collect masks for graphs and their hex color.
-        sn_masks = [
-        [r'$I < 3\sigma$', "#FC0000", mask_to_sigma3, 'to_s3'], 
-        [r'$3\sigma \leq I < 10\sigma$', "#F0FC00", mask_3_to_10, 's3_to_10'],
-        [r'$10\sigma \leq I < 100\sigma$', "#0DFC00", mask_10_to_100, 's10_to_s100'],
-        [r'$100\sigma \leq I < 1000\sigma$', "#00FCF8", mask_100_to_1000, 's100_to_s1000'],
-        [r'$1000\sigma \leq I\sigma$', "#FC00F8", mask_from_1000, 'from_s1000'],
-        ]
-
-        # Now make report for pct
-        pct_results_name = startdir + os.sep + "pct_%s_results.txt"%(sf_dir)
-        pct_results = open(pct_results_name, 'w')
-
-        # Collect header
-        headers = []
-
-        # Collect data
-        datacsv = []
-
-        sn_masks_used = []
-        for label, color, sel_mask, dickey in sn_masks:
-            data_ref_mask = data_ref_flat[sel_mask.mask]
-
-            if type(data_ref_mask) != numpy.ndarray:
-                continue
-            pct = float(len(data_ref_mask)) / float(len(data_ref_flat)) * 100.
-            sn_masks_used.append([label, color, sel_mask, dickey, pct])
-
-            headers.append(dickey)
-            datacsv.append("%2.1f"%pct)
-
-        # Write data
-        write_data(out=pct_results, headings=headers, data=[datacsv])
-        pct_results.close()
+        # Now do the coMDD method to create .ft2 files.
 
         # Then create ni dirs.
         for j, ni_dir in enumerate(ni_dirs):
@@ -1498,21 +1400,122 @@ if __name__ == "__main__":
             else:
                 print("File exists. I do not produce .ft2 file again.: %s"%path_ft2_file)
 
-        print("Now making figures and reports.")
+        ### Now do comparisons.
 
-        # First find the linear difference between ref, and the full data.
-        path_ref_FULL_ft2file = create_proc_ref_dir + os.sep + 'test.ft2'
+        print("\nNow making figures and reports.")
+
+        # Producefile for reference.
+        if input_args.ref_FT:
+            REF_ft2file_name = 'test_REF_FT.ft2'
+            path_ref_REF_ft2file = create_proc_ref_dir + os.sep + REF_ft2file_name
+        else:
+            REF_ft2file_name = 'test_REF_coMDD.ft2'
+            shutil.copy(create_proc_ref_dir + os.sep + 'test.ft2', create_proc_ref_dir + os.sep + REF_ft2file_name)
+            path_ref_REF_ft2file = create_proc_ref_dir + os.sep + REF_ft2file_name
+
+        # test.ft2 has to exist for coMDD
+        if not os.path.exists(path_ref_REF_ft2file):
+            # Change current directory
+            os.chdir(create_proc_ref_dir)
+            # Call script to create files.
+            call_prog(args=['proc_FT.sh'])
+            # Change back again
+            os.chdir(cwd)
+
+        # Now read data for reference
+        returncode, line_split = call_prog(args=['showApod', path_ref_REF_ft2file], verbose=False)
+        rmsd_ref = extract_rmsd(lines=line_split)
+        res_dic[sf_dir]['ref'] = {}
+        res_dic[sf_dir]['ref']['rmsd'] = rmsd_ref
 
         # With nmrglue, read the fourier transformed spectrum to get information.
-        dic_ref_full, udic_ref_full, data_ref_full = read_spectrum(file=path_ref_FULL_ft2file)
-        a_dev, r_xy_dev = linear_corr(x=data_ref_flat, y=data_ref_full.flatten())
+        dic_ref, udic_ref, data_ref = read_spectrum(file=path_ref_REF_ft2file)
+        res_dic[sf_dir]['ref']['dic'] = dic_ref
+        res_dic[sf_dir]['ref']['udic'] = udic_ref
+        res_dic[sf_dir]['ref']['data'] = data_ref
 
-        # Get the RMSD from showApod
-        returncode, line_split = call_prog(args=['showApod', path_ref_FULL_ft2file], verbose=False)
-        rmsd_FULL_ft2file = extract_rmsd(lines=line_split)
+        # Now do a peak list
+        table = nmrglue.analysis.peakpick.pick(data=data_ref, pthres=20*rmsd_ref, nthres=None, algorithm='connected', est_params=False, cluster=False, table=True)
+        #table = nmrglue.analysis.peakpick.pick(data=data_ref, pthres=20*rmsd_ref, nthres=None, algorithm='downward', est_params=False, cluster=False, table=True)
 
-        # Measure the intensity
-        data_ref_full_int = data_ref_full[table['Y_AXIS'].astype(int), table['X_AXIS'].astype(int)]
+        ## Measure the intensity
+        data_ref_int = data_ref[table['Y_AXIS'].astype(int), table['X_AXIS'].astype(int)]
+
+        # Now convert points to ppm.
+        uc_dim0 = nmrglue.pipe.make_uc(dic_ref, data_ref, dim=0)
+        uc_dim1 = nmrglue.pipe.make_uc(dic_ref, data_ref, dim=1)
+        y_axisppm = uc_dim0.unit(table['Y_AXIS'], "ppm")
+        x_axisppm = uc_dim1.unit(table['X_AXIS'], "ppm")
+
+        # Try a contour plot.
+        print("\nNow making contour plot for reference.")
+        png_path = startdir + os.sep + "spec_" + REF_ft2file_name + ".png"
+        if not os.path.isfile(png_path):
+            contour_plot(dic=dic_ref, udic=udic_ref, data=data_ref, contour_start=20*rmsd_ref, contour_num=10, contour_factor=1.20, ppm=True, show=False, table=table)
+            plt.savefig(png_path, format='png', dpi=600)
+            # Close figure.
+        plt.close("all")
+
+        # Make a histogram
+        print("\nNow making histogram of intensities for reference.")
+        ax, amp, mu, sigma, xlim_ref, ylim_ref = hist_plot(ndarray=data_ref, show=False)
+        res_dic[sf_dir]['ref']['hist'] = [amp, mu, sigma]
+
+        png_path = startdir + os.sep + "hist_" + REF_ft2file_name + ".png"
+        if not os.path.isfile(png_path):
+            plt.savefig(png_path, format='png', dpi=600)
+        # Close figure.
+        plt.close("all")
+
+        # Flatten data
+        data_ref_flat = data_ref.flatten()
+
+        # Make selection masks
+        sigma3 = mu + 3*sigma
+        sigma10 = mu + 10*sigma
+        sigma100 = mu + 100*sigma
+        sigma1000 = mu + 1000*sigma
+
+        mask_to_sigma3 = masked_where(data_ref_flat < sigma3, data_ref_flat)
+        mask_3_to_10 = masked_where( numpy.logical_and( sigma3 <= data_ref_flat, data_ref_flat < sigma10) , data_ref_flat)
+        mask_10_to_100 = masked_where( numpy.logical_and( sigma10 <= data_ref_flat, data_ref_flat < sigma100) , data_ref_flat)
+        mask_100_to_1000 = masked_where( numpy.logical_and( sigma100 <= data_ref_flat, data_ref_flat < sigma1000 ) , data_ref_flat)
+        mask_from_1000 = masked_where( sigma1000 <= data_ref_flat, data_ref_flat)
+
+        ## Collect masks for graphs and their hex color.
+        sn_masks = [
+        [r'$I < 3\sigma$', "#FC0000", mask_to_sigma3, 'to_s3'], 
+        [r'$3\sigma \leq I < 10\sigma$', "#F0FC00", mask_3_to_10, 's3_to_10'],
+        [r'$10\sigma \leq I < 100\sigma$', "#0DFC00", mask_10_to_100, 's10_to_s100'],
+        [r'$100\sigma \leq I < 1000\sigma$', "#00FCF8", mask_100_to_1000, 's100_to_s1000'],
+        [r'$1000\sigma \leq I\sigma$', "#FC00F8", mask_from_1000, 'from_s1000'],
+        ]
+
+        # Now make report for pct
+        pct_results_name = startdir + os.sep + "pct_%s_results.txt"%(sf_dir)
+        pct_results = open(pct_results_name, 'w')
+
+        # Collect header
+        headers = []
+
+        # Collect data
+        datacsv = []
+
+        sn_masks_used = []
+        for label, color, sel_mask, dickey in sn_masks:
+            data_ref_mask = data_ref_flat[sel_mask.mask]
+
+            if type(data_ref_mask) != numpy.ndarray:
+                continue
+            pct = float(len(data_ref_mask)) / float(len(data_ref_flat)) * 100.
+            sn_masks_used.append([label, color, sel_mask, dickey, pct])
+
+            headers.append(dickey)
+            datacsv.append("%2.1f"%pct)
+
+        # Write data
+        write_data(out=pct_results, headings=headers, data=[datacsv])
+        pct_results.close()
 
         # Collect proc ints
         proc_ints = []
@@ -1541,21 +1544,24 @@ if __name__ == "__main__":
             proc_ints.append(data_cur_int)
 
             # Try a contour plot.
-            contour_plot(dic=dic_cur, udic=udic_cur, data=data_cur, contour_start=20*rmsd_FULL_ft2file, contour_num=10, contour_factor=1.20, ppm=True, show=False, table=table)
             png_path = startdir + os.sep + "spect_%s_%s.png"%(sf_dir, proc_dir)
-            plt.savefig(png_path, format='png', dpi=600)
+            if not os.path.isfile(png_path):
+                contour_plot(dic=dic_cur, udic=udic_cur, data=data_cur, contour_start=20*rmsd_ref, contour_num=10, contour_factor=1.20, ppm=True, show=False, table=table)
+                plt.savefig(png_path, format='png', dpi=600)
             # Close figure.
             plt.close("all")
 
             # Make a residual intensity spectrum.
-            data_resi = data_cur - data_ref_full
+            data_resi = data_cur - data_ref
             path_resi_spec = cur_proc_dir + os.sep + 'test_resi.ft2'
             nmrglue.fileio.pipe.write(filename=path_resi_spec, dic=dic_cur, data=data_resi, overwrite=True)
 
             # Try a contour plot.
-            contour_plot(dic=dic_cur, udic=udic_cur, data=data_resi, contour_start=6*rmsd_FULL_ft2file, contour_num=10, contour_factor=1.20, ppm=True, show=False, table=table)
             png_path = startdir + os.sep + "resi_spect_%s_%s.png"%(sf_dir, proc_dir)
-            plt.savefig(png_path, format='png', dpi=600)
+            if not os.path.isfile(png_path):
+                contour_plot(dic=dic_cur, udic=udic_cur, data=data_resi, contour_start=6*rmsd_ref, contour_num=10, contour_factor=1.20, ppm=True, show=False, table=table)
+
+                plt.savefig(png_path, format='png', dpi=600)
             # Close figure.
             plt.close("all")
 
@@ -1601,10 +1607,10 @@ if __name__ == "__main__":
                 a_mask, r_xy_mask = linear_corr(x=data_ref_mask, y=data_cur_mask)
                 res_dic[sf_dir][proc_dir]['corr_s'][dickey] = [a_mask, r_xy_mask]
 
-                deviation = data_cur_mask - a_dev * data_ref_mask
-                rmsd = numpy.sqrt(numpy.mean(numpy.square(deviation)))
+                deviation = data_cur_mask - data_ref_mask
+                rmsd_mask = numpy.sqrt(numpy.mean(numpy.square(deviation)))
                
-                ax.plot(data_ref_mask, data_cur_mask, '.', color=color, markersize=2, label='%s , pct=%2.1f, a=%1.2f, r_xy^2=%3.4f, rmsd=%3.4f'%(label, pct, a_mask, r_xy_mask**2, rmsd))
+                ax.plot(data_ref_mask, data_cur_mask, '.', color=color, markersize=2, label='%s , pct=%2.1f, a=%1.2f, r_xy^2=%3.4f, rmsd=%3.4f'%(label, pct, a_mask, r_xy_mask**2, rmsd_mask))
 
             # Set text.
             ax.set_xlabel("All spectrum intensities for reference")
@@ -1614,15 +1620,38 @@ if __name__ == "__main__":
             ax.legend(loc='lower right', prop={'size':6})
 
             png_path = startdir + os.sep + "corr_%s_%s.png"%(sf_dir, proc_dir)
-            #if not os.path.isfile(png_path):
-            plt.savefig(png_path, format='png', dpi=600)
+            if not os.path.isfile(png_path):
+                plt.savefig(png_path, format='png', dpi=600)
             # Close figure.
             plt.close("all")
             print("Made figure: %s"%png_path)
 
+            ## Make 
+
+            # Define the ratio weighted values
+            g = data_ref/data_ref
+            h = data_cur/data_ref
+
+            # Calculate the deviation
+            d_gh = g - h
+
+            # Calculate the mean of the deviations
+            mean_d_gh = numpy.mean(d_gh)
+
+            # Calculate the standard deviations
+            std_d_gh = numpy.std(d_gh, ddof=1)
+
+            # Calculate the root mean square deviation
+            rmsd_gh = numpy.sqrt(numpy.mean(numpy.square(d_gh)))
+
+            # Calculate the pooled error
+            x_err = 
+            y_err = 
+
+
         # Write intensities
         peaks_results_name = startdir + os.sep + "peaks_%s_results.tab"%(sf_dir)
-        write_peak_list(filename=peaks_results_name, x_axis_pts=table['X_AXIS'], y_axis_pts=table['Y_AXIS'], x_axis_ppm=x_axisppm, y_axis_ppm=y_axisppm, int_ref=data_ref_full_int, list_int_cov=proc_ints)
+        write_peak_list(filename=peaks_results_name, x_axis_pts=table['X_AXIS'], y_axis_pts=table['Y_AXIS'], x_axis_ppm=x_axisppm, y_axis_ppm=y_axisppm, int_ref=data_ref_int, list_int_cov=proc_ints)
 
         # Now make report for Hist
         hist_results_name = startdir + os.sep + "hist_%s_results.txt"%(sf_dir)
@@ -1692,7 +1721,7 @@ if __name__ == "__main__":
 
             # Set same limits as ref
             #ax.set_xlim(mu-6*sigma, mu+6*sigma)
-            ax.set_xlim(-10*rmsd_FULL_ft2file, +10*rmsd_FULL_ft2file)
+            ax.set_xlim(-10*rmsd_ref, +10*rmsd_ref)
             #ax.set_ylim(ylim_ref)
 
             png_path = startdir + os.sep + "residual_hist_%s_%s.png"%(sf_dir, proc_dir)
