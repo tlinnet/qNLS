@@ -1141,7 +1141,10 @@ if __name__ == "__main__":
     sw_ppm = sw / obsfreq1
 
     # Get path to dpoisson7.1.1. NUSScore script from Peter E. Wright.
-    path_dpoisson = os.path.dirname(os.path.realpath(__file__))+os.sep+"Aoto_Fenwick_Kroon_Wright_2014_NUSScore_linux_32bit-release"+os.sep+"dpoisson7.1.1"
+    if sys.platform == "darwin":
+        path_dpoisson = os.path.dirname(os.path.realpath(__file__))+os.sep+"Aoto_Fenwick_Kroon_Wright_2014_NUSScore"+os.sep+"mac64"+os.sep+"dpoisson7.1.1.mac"
+    else:
+        path_dpoisson = os.path.dirname(os.path.realpath(__file__))+os.sep+"Aoto_Fenwick_Kroon_Wright_2014_NUSScore"+os.sep+"linux32"+os.sep+"dpoisson7.1.1"
 
     test = ni < 400
     if not test:
@@ -1209,6 +1212,7 @@ if __name__ == "__main__":
             constant_time = 0
             poisson_args = ["%1.7f"%cur_cov, "%i"%td1, "1", "%2.1f"%R2, "1", "%i"%constant_time, "0", "%2.3f"%obsfreq1, "1", "%2.2f"%sw_ppm, "1", "0", "%i"%input_args.N_NUS_SCHEDULES, "1", "%s"%out_dpoisson]
             print("Created with args:", poisson_args)
+            print("%s"%(" ".join([path_dpoisson] + poisson_args)))
             returncode, line_split = call_prog(args=[path_dpoisson] + poisson_args, verbose=True)
         else:
             print("\nNUSScedules with dpoisson7.1.1 already exists. Using these.\n")
@@ -1517,11 +1521,12 @@ if __name__ == "__main__":
         write_data(out=pct_results, headings=headers, data=[datacsv])
         pct_results.close()
 
+
+        # Then go through all processed directories
+
+
         # Collect proc ints
         proc_ints = []
-
-        # Then collect showApod rmsd
-        # Get showApod
         for j, proc_dir in enumerate(all_proc_dirs):
             cur_proc_dir = create_sf_dir + os.sep + proc_dir
             path_ft2_file = cur_proc_dir + os.sep + 'test.ft2'
@@ -1626,11 +1631,11 @@ if __name__ == "__main__":
             plt.close("all")
             print("Made figure: %s"%png_path)
 
-            ## Make 
+            ## Make relative comparisons
 
             # Define the ratio weighted values
-            g = data_ref/data_ref
-            h = data_cur/data_ref
+            g = data_ref_int/data_ref_int
+            h = data_cur_int/data_ref_int
 
             # Calculate the deviation
             d_gh = g - h
@@ -1645,9 +1650,27 @@ if __name__ == "__main__":
             rmsd_gh = numpy.sqrt(numpy.mean(numpy.square(d_gh)))
 
             # Calculate the pooled error
-            x_err = 
-            y_err = 
+            g_err = rmsd_ref / data_ref_int
+            h_err = rmsd / data_ref_int
+            pool_std_gh= numpy.sqrt( numpy.mean(numpy.square(g_err) + numpy.square(h_err)) )
 
+            # Make a plot
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+
+            # Make line.
+            ax.plot(numpy.zeros_like(d_gh), d_gh, 'b.', label='differences of relative change')
+            ax.errorbar(mean_d_gh, mean_d_gh, yerr=std_d_gh, fmt='r.', label='mean of differences of relative change')
+            max_dev = numpy.max(numpy.abs(d_gh))
+            ax.set_ylim([-max_dev, max_dev])
+            ax.set_xlim([-max_dev, max_dev])
+
+            png_path = startdir + os.sep + "rel_%s_%s.png"%(sf_dir, proc_dir)
+            if not os.path.isfile(png_path):
+                plt.savefig(png_path, format='png', dpi=600)
+            # Close figure.
+            plt.close("all")
+            print("Made figure: %s"%png_path)
 
         # Write intensities
         peaks_results_name = startdir + os.sep + "peaks_%s_results.tab"%(sf_dir)
