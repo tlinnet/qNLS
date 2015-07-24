@@ -1,0 +1,76 @@
+----- NUSscore and dpoisson7 help file ------
+
+The linux version of the NUSscore GUI was built statically with Qt-4.7.4 available under the GNU Lesser General Public License (LGPL) (available for download at http://qt-project.org/)
+
+The statically built linux NUSscore GUI is available under the LGPL.  Corresponding object files are in src/
+The Mac OSX version of the NUSscore.app is provided linked to Qt libraries as private frameworks.
+
+---Version History----
+dpoisson7.1.1 (and 7.0.1) have bug fixes for a memory allocation error which would result in crashes or incorrect scores (usually negative).
+
+Binaries for Linux and Mac are provided for dpoisson7.1  (the score from dpoisson7.1 has been slightly improved by including a penalizing term for gaps in the first 1/4 of the nuslist.)  The binaries for dpoisson7 (described in Aoto et al., 2014 JMR) are also included.  It is recommended to use dpoisson7.1.
+
+
+
+
+
+How to run:
+--------
+GUI
+--------
+NUSscore is a GUI to run dpoisson.
+dpoisson will generate sinusoidal weighted Poisson-gap schemes (as described in Hyberts et al., 2010 JACS 132:2145).  The program will also score the schemes.
+
+Execute NUSscore and the following fields will be presented:
+TD: the total number of desired (reconstructed) real+imaginary points
+SW: the intended spectral width in PPM
+Obs Freq:  the observed frequency in MHz
+1/T2:  an approximate R2 in Hz
+CT checkbox:  check this box to ignore the R2 value and use the default weighting (2)
+NUS:  the % NUS
+# of schemes:  the number of schemes to be generated
+seed:  the random seed (if reproducing a scheme) or 0 for the program to generate a random seed
+Path to dpoisson7:  the full path to the dpoisson7.1 binary
+Full path to output:  the full path to the output directory
+
+The R2, SW, TD, and Obs Freq are used to adjust the sinusoidal weighting (forward weighting). Checking the CT box (constant time) will set the sinusoidal weighting to 2.
+
+Press OK to start.  (The dpoisson run can be stopped at any time by pressing STOP. However, the schemes will not be scored).
+
+The following folders will be created in the output path:
+
+lists (generated nuslists)
+
+header (parameters used to generate the scheme, the filename matches the nuslist in lists)
+
+psf (point spread function for each nuslist, the filename matches the nuslist in lists)
+
+score (scores for each list in nus_all.out and the top 10 ranked schemes in nus_top.out)
+
+--------------
+Commandline
+--------------
+dpoisson can be run without the GUI from the command line:
+
+run
+dpoisson7.1
+and a help file will print:
+Enter %nus td1 1 t2decayrate(/s) 1 ct1(1/0 for yes/no) 0 obsfreq1 1 swppm1 1 seed(0 for time) numschemes cmdline(1/0 for yes/no) outpath(optional)
+
+The R2 in Hz (t2decayrate) is approximate and is used along with the intended SW in ppm (swppm1), total number of increments (td1) and observed frequency in MHz (obsfreq1) to adjust the sinusoidal weighting parameter (or forward weighting).
+
+For example to create 5000 schemes with 50% NUS, 256 real + imaginary reconstructed points, for a protein with an R2 of 40/s at a SW of 60ppm and an obs freq of 188MHz the user would run dpoisson7 with:
+dpoisson7 0.5 256 1 40 1 0 0 188 1 60 1 0 5000 1 /home/nus_out
+ 
+-----------
+Example
+-----------
+The following run parameters should give a score of 0.495882:
+NUS: 0.6
+TD: 512
+R2: 10(any value)
+Obs Freq: 86.6
+SW: 32
+CT: checked (1)
+seed: 286620
+
